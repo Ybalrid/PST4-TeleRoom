@@ -27,3 +27,16 @@
 *.exe
 *.out
 *.app
+
+# Random visual studio files
+*.pdb 
+*.iobj
+*.ipdb
+*.sdf
+*.opensdf
+obj/*
+ipch/*
+.vs/
+
+# Application log
+Annwvyn.log
