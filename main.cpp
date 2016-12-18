@@ -16,7 +16,7 @@ AnnMain() //The application entry point is "AnnMain()". return type int.
 	AnnInit("NameOfApp");
 
 	//Call physics initialization for the player body:
-	AnnGetEngine()->initPlayerPhysics();
+	AnnGetEngine()->initPlayerRoomscalePhysics();
 
 	//Instantiate and register our basic level and "jump" to it:
 	AnnGetLevelManager()->addLevel(std::make_shared<MyLevel>());
