@@ -1,3 +1,6 @@
 [submodule "external/RakNet"]
 	path = external/RakNet
 	url = https://github.com/Ybalrid/RakNet
+[submodule "external/PST4-Teleroom-common"]
+	path = external/PST4-Teleroom-common
+	url = https://github.com/Ybalrid/PST4-Teleroom-common
