@@ -2,12 +2,17 @@
 
 #include <Annwvyn.h>
 
+#include <RakPeerInterface.h>
+#include <RakNetTypes.h>
+#include <BitStream.h>
+#include <MessageIdentifiers.h>
+
 namespace PST4
 {
 	class NetSubSystem : public Annwvyn::AnnUserSubSystem
 	{
 	public:
-		NetSubSystem();
+		NetSubSystem(const std::string& serverHostname);
 		~NetSubSystem();
 		bool needUpdate() override;
 		void update() override;

@@ -6,7 +6,7 @@ using namespace Annwvyn;
 
 NetSubSystem* NetSubSystem::singleton(nullptr);
 
-NetSubSystem::NetSubSystem() : AnnUserSubSystem("PST4Net")
+NetSubSystem::NetSubSystem(const std::string& serverHost) : AnnUserSubSystem("PST4Net")
 {
 	if (singleton) throw std::runtime_error("Tried to instantiante PST4::NetSubsystem more than once!");
 	singleton = this;

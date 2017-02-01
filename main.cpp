@@ -8,8 +8,9 @@ using namespace Annwvyn;
 
 //Include our level/stages here
 #include "myLevel.hpp"
-
 #include "PST4Net.hpp"
+
+constexpr const char* const server{ "127.0.0.1" };
 
 AnnMain() //The application entry point is "AnnMain()". return type int.
 {
@@ -27,7 +28,7 @@ AnnMain() //The application entry point is "AnnMain()". return type int.
 	//The game is rendering here now:
 	AnnGetEventManager()->useDefaultEventListener();
 
-	AnnGetEngine()->registerUserSubSystem(std::make_shared<PST4::NetSubSystem>());
+	AnnGetEngine()->registerUserSubSystem(std::make_shared<PST4::NetSubSystem>(server));
 
 	//The game runs here
 	AnnGetEngine()->startGameplayLoop();
