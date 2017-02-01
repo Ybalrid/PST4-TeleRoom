@@ -6,10 +6,16 @@
       <Filter>pch</Filter>
     </ClCompile>
     <ClCompile Include="myLevel.cpp" />
+    <ClCompile Include="PST4Net.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="pch">
       <UniqueIdentifier>{c1a0ba64-1187-45fa-851f-c1410c34b7c2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Network">
+      <UniqueIdentifier>{2b623d1e-26ce-49d0-a969-775a00c991df}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -17,5 +23,8 @@
       <Filter>pch</Filter>
     </ClInclude>
     <ClInclude Include="myLevel.hpp" />
+    <ClInclude Include="PST4Net.hpp">
+      <Filter>Network</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

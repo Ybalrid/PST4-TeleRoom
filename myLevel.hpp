@@ -2,7 +2,6 @@
 #define MY_LEVEL
 
 #include <Annwvyn.h>
-using namespace Annwvyn;
 
 //Each level you can create inherits
 //from AnnAbstractLevel

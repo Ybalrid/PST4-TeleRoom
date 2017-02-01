@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "myLevel.hpp"
 
+using namespace Annwvyn;
+
 MyLevel::MyLevel() : constructLevel()
 {
 }
