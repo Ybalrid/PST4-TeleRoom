@@ -9,12 +9,6 @@ MyLevel::MyLevel() : constructLevel()
 
 void MyLevel::load()
 {
-	//Load Sinbad:
-	auto Sinbad(addGameObject("Sinbad.mesh"));
-	Sinbad->setScale({ 0.3f, 0.3f, 0.3f });
-	Sinbad->setPosition({ 0, 1, 5 });
-	Sinbad->setUpPhysics(250, boxShape);
-
 	//Load Ground:
 	auto Ground(addGameObject("Ground.mesh"));
 	Ground->setPosition({ 0, 0, 0 });
