@@ -8,7 +8,9 @@ NetSubSystem* NetSubSystem::singleton(nullptr);
 
 NetSubSystem::NetSubSystem(const std::string& serverHost) : AnnUserSubSystem("PST4Net"),
 netState{ NetState::NOT_READY },
-serverAddress{ serverHost }
+serverAddress{ serverHost },
+p{ "Hello from Annwvyn!" },
+lastHeartbeatTime{ 0 }
 {
 	if (singleton) throw std::runtime_error("Tried to instantiate PST4::NetSubsystem more than once!");
 	singleton = this;
@@ -25,6 +27,7 @@ serverAddress{ serverHost }
 NetSubSystem::~NetSubSystem()
 {
 	singleton = nullptr;
+	peer->Shutdown(300);
 	RakNet::RakPeerInterface::DestroyInstance(peer);
 }
 
@@ -66,10 +69,42 @@ void NetSubSystem::update()
 
 	case NetState::CONNECTED:
 	{
-		echoPacket p("Hello from Annwyvn!");
-		peer->Send(reinterpret_cast<char*>(&p), sizeof(p), PacketPriority::HIGH_PRIORITY, PacketReliability::RELIABLE_ORDERED, 0, serverSystemAddress, false);
-		break;
+		static int echoTime = 0;
+		if (++echoTime > 100)
+		{
+			echoTime = 0;
+			peer->Send(reinterpret_cast<char*>(&p), sizeof(p), PacketPriority::LOW_PRIORITY, PacketReliability::UNRELIABLE, 0, serverSystemAddress, false);
+		}
+		if (AnnGetEngine()->getTimeFromStartupSeconds() - lastHeartbeatTime > 5)
+		{
+			heartbeatPacket heartbeat;
+			lastHBAck = peer->Send(reinterpret_cast<char*>(&heartbeat), sizeof(heartbeat), IMMEDIATE_PRIORITY, RELIABLE_WITH_ACK_RECEIPT, 0, serverSystemAddress, false);
+			lastHeartbeatTime = AnnGetEngine()->getTimeFromStartupSeconds();
+			AnnDebug() << "Sending heartbeat " << lastHBAck;
+		}
+
+		for (packet = peer->Receive(); packet;
+			peer->DeallocatePacket(packet), packet = peer->Receive())
+		{
+			if (packet->data[0] == ID_CONNECTION_LOST)
+			{
+				AnnDebug() << "Connection definitively lost";
+				netState = NetState::FALIED;
+			}
+			else if (packet->data[0] == ID_SND_RECEIPT_ACKED)
+			{
+				uint32_t ack;
+				memcpy(&ack, packet->data + 1, 4);
+				if (ack == lastHBAck)
+					AnnDebug() << "last heartbeat ok";
+				else
+					AnnDebug() << "got ack for heartbeat " << ack << " and was expecting " << lastHBAck;
+			}
+			else
+				AnnDebug() << "Got unknown packet message type : " << unsigned int(packet->data[0]);
+		}
 	}
+	break;
 	}
 }
 

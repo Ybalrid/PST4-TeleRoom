@@ -26,11 +26,14 @@ namespace PST4
 	private:
 		NetState netState;
 		std::string serverAddress;
+		uint32_t lastHBAck;
 		static NetSubSystem* singleton;
 		RakNet::RakPeerInterface* peer;
 		RakNet::Packet* packet;
 		RakNet::SocketDescriptor sd;
 		RakNet::SystemAddress serverSystemAddress;
 		static constexpr const auto port = 42420U;
+		echoPacket p;
+		double lastHeartbeatTime;
 	};
 }

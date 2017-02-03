@@ -10,7 +10,7 @@ MyLevel::MyLevel() : constructLevel()
 void MyLevel::load()
 {
 	//Load Ground:
-	auto Ground(addGameObject("Ground.mesh"));
+	auto Ground(addGameObject("Ground.mesh", "GroundPlane"));
 	Ground->setPosition({ 0, 0, 0 });
 	Ground->setUpPhysics();
 
