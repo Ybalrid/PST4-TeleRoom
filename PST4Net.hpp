@@ -7,6 +7,7 @@
 #include <BitStream.h>
 #include <MessageIdentifiers.h>
 
+#define I_AM_CLIENT
 #include <PST4Packets.hpp>
 #include <cstring>
 
@@ -35,5 +36,6 @@ namespace PST4
 		static constexpr const auto port = 42420U;
 		echoPacket p;
 		double lastHeartbeatTime;
+		size_t sessionId;
 	};
 }

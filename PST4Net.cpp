@@ -10,7 +10,8 @@ NetSubSystem::NetSubSystem(const std::string& serverHost) : AnnUserSubSystem("PS
 netState{ NetState::NOT_READY },
 serverAddress{ serverHost },
 p{ "Hello from Annwvyn!" },
-lastHeartbeatTime{ 0 }
+lastHeartbeatTime{ 0 },
+sessionId{ 0 }
 {
 	if (singleton) throw std::runtime_error("Tried to instantiate PST4::NetSubsystem more than once!");
 	singleton = this;
@@ -69,8 +70,15 @@ void NetSubSystem::update()
 
 	case NetState::CONNECTED:
 	{
+		//Transmit current poses to server :
+		if (sessionId)
+		{
+			headPosePacket head{ sessionId, AnnGetVRRenderer()->trackedHeadPose.position, AnnGetVRRenderer()->trackedHeadPose.orientation };
+			peer->Send(reinterpret_cast<char*>(&head), sizeof(headPosePacket), LOW_PRIORITY, UNRELIABLE, 0, serverSystemAddress, false);
+		}
+
 		static int echoTime = 0;
-		if (++echoTime > 100)
+		if (++echoTime > 1000)
 		{
 			echoTime = 0;
 			peer->Send(reinterpret_cast<char*>(&p), sizeof(p), PacketPriority::LOW_PRIORITY, PacketReliability::UNRELIABLE, 0, serverSystemAddress, false);
@@ -86,6 +94,12 @@ void NetSubSystem::update()
 		for (packet = peer->Receive(); packet;
 			peer->DeallocatePacket(packet), packet = peer->Receive())
 		{
+			if (!sessionId) if (packet->data[0] == ID_PST4_MESSAGE_SESSION_ID)
+			{
+				auto s2cID = reinterpret_cast<serverToClientIdPacket*>(packet->data);
+				sessionId = s2cID->clientId;
+				AnnDebug() << "Server given our session the ID : " << sessionId;
+			}
 			if (packet->data[0] == ID_CONNECTION_LOST)
 			{
 				AnnDebug() << "Connection definitively lost";
