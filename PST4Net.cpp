@@ -94,11 +94,20 @@ void NetSubSystem::update()
 		for (packet = peer->Receive(); packet;
 			peer->DeallocatePacket(packet), packet = peer->Receive())
 		{
-			if (!sessionId) if (packet->data[0] == ID_PST4_MESSAGE_SESSION_ID)
+			if (!sessionId)
 			{
-				auto s2cID = reinterpret_cast<serverToClientIdPacket*>(packet->data);
-				sessionId = s2cID->clientId;
-				AnnDebug() << "Server given our session the ID : " << sessionId;
+				if (packet->data[0] == ID_PST4_MESSAGE_SESSION_ID)
+				{
+					auto s2cID = reinterpret_cast<serverToClientIdPacket*>(packet->data);
+					sessionId = s2cID->clientId;
+					AnnDebug() << "Server given our session the ID : " << sessionId;
+				}
+				else
+				{
+					serverToClientIdPacket rq(0);
+					peer->Send(reinterpret_cast<char*>(&rq), sizeof rq, IMMEDIATE_PRIORITY, RELIABLE, 0, serverSystemAddress, false);
+					continue;
+				}
 			}
 
 			if (sessionId) if (packet->data[0] == ID_PST4_MESSAGE_HEAD_POSE)
@@ -113,7 +122,7 @@ void NetSubSystem::update()
 						remotes.at(headPose->sessionId)->setHeadPose(headPose->absPos.getAnnVect3(), headPose->absOrient.getAnnQuaternion());
 					}
 				}
-				break;
+				continue;
 			}
 
 			if (packet->data[0] == ID_CONNECTION_LOST)
