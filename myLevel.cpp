@@ -27,4 +27,14 @@ void MyLevel::load()
 
 void MyLevel::runLogic()
 {
+	for (auto controller : AnnGetVRRenderer()->getHandControllerArray()) if (controller)
+	{
+		if (!controller->getModel())
+		{
+			if (controller->getSide() == AnnHandController::rightHandController)
+				controller->attachModel(AnnGetEngine()->getSceneManager()->createEntity("rhand.mesh"));
+			else
+				controller->attachModel(AnnGetEngine()->getSceneManager()->createEntity("lhand.mesh"));
+		}
+	}
 }

@@ -75,6 +75,14 @@ void NetSubSystem::update()
 		{
 			headPosePacket head{ sessionId, AnnGetVRRenderer()->trackedHeadPose.position, AnnGetVRRenderer()->trackedHeadPose.orientation };
 			peer->Send(reinterpret_cast<char*>(&head), sizeof(headPosePacket), LOW_PRIORITY, UNRELIABLE, 0, serverSystemAddress, false);
+
+			handPosePacket handPose(sessionId, false);
+			if (AnnGetVRRenderer()->getRecognizedControllerCount() > 0)
+			{
+				auto controllers = AnnGetVRRenderer()->getHandControllerArray();
+				handPose = handPosePacket(sessionId, controllers[0]->getWorldPosition(), controllers[0]->getWorldOrientation(), controllers[1]->getWorldPosition(), controllers[1]->getWorldOrientation());
+			}
+			peer->Send(reinterpret_cast<char*>(&handPose), sizeof handPose, LOW_PRIORITY, UNRELIABLE, 0, serverSystemAddress, false);
 		}
 
 		static int echoTime = 0;
@@ -116,19 +124,33 @@ void NetSubSystem::update()
 				}
 			}
 
-			if (sessionId) if (packet->data[0] == ID_PST4_MESSAGE_HEAD_POSE)
+			if (sessionId)
 			{
-				auto headPose = reinterpret_cast<headPosePacket*>(packet->data);
-				if (headPose->sessionId != sessionId)
+				if (packet->data[0] == ID_PST4_MESSAGE_HEAD_POSE)
 				{
-					//Other client here!!!!!
-					if (remotes.count(headPose->sessionId) == 0) remotes[headPose->sessionId] = std::make_unique<RemoteUser>(headPose->sessionId);
-					else
+					auto headPose = reinterpret_cast<headPosePacket*>(packet->data);
+					if (headPose->sessionId != sessionId)
 					{
-						remotes.at(headPose->sessionId)->setHeadPose(headPose->absPos.getAnnVect3(), headPose->absOrient.getAnnQuaternion());
+						//Other client here!!!!!
+						if (remotes.count(headPose->sessionId) == 0) remotes[headPose->sessionId] = std::make_unique<RemoteUser>(headPose->sessionId);
+						else
+						{
+							remotes.at(headPose->sessionId)->setHeadPose(headPose->absPos.getAnnVect3(), headPose->absOrient.getAnnQuaternion());
+						}
 					}
+					continue;
 				}
-				continue;
+				else if (packet->data[0] == ID_PST4_MESSAGE_HAND_POSE)
+				{
+					auto handPose = reinterpret_cast<handPosePacket*>(packet->data);
+					if (handPose->hasHands && sessionId != handPose->sessionId)
+					{
+						if (remotes.count(handPose->sessionId) == 0) remotes[handPose->sessionId] = std::make_unique<RemoteUser>(handPose->sessionId);
+						else remotes.at(handPose->sessionId)->setHandPoses(handPose->leftPos.getAnnVect3(), handPose->leftOrient.getAnnQuaternion(),
+							handPose->rightPos.getAnnVect3(), handPose->rightOrient.getAnnQuaternion());
+					}
+					continue;
+				}
 			}
 
 			if (packet->data[0] == ID_CONNECTION_LOST)
