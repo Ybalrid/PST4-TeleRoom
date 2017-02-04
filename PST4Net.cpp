@@ -100,6 +100,22 @@ void NetSubSystem::update()
 				sessionId = s2cID->clientId;
 				AnnDebug() << "Server given our session the ID : " << sessionId;
 			}
+
+			if (sessionId) if (packet->data[0] == ID_PST4_MESSAGE_HEAD_POSE)
+			{
+				auto headPose = reinterpret_cast<headPosePacket*>(packet->data);
+				if (headPose->sessionId != sessionId)
+				{
+					//Other client here!!!!!
+					if (remotes.count(headPose->sessionId) == 0) remotes[headPose->sessionId] = std::make_unique<RemoteUser>(headPose->sessionId);
+					else
+					{
+						remotes.at(headPose->sessionId)->setHeadPose(headPose->absPos.getAnnVect3(), headPose->absOrient.getAnnQuaternion());
+					}
+				}
+				break;
+			}
+
 			if (packet->data[0] == ID_CONNECTION_LOST)
 			{
 				AnnDebug() << "Connection definitively lost";

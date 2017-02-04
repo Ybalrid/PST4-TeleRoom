@@ -26,5 +26,11 @@
     <ClInclude Include="PST4Net.hpp">
       <Filter>Network</Filter>
     </ClInclude>
+    <ClInclude Include="external\PST4-Teleroom-common\PST4Packets.hpp">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="PST4RemoteUser.hpp">
+      <Filter>Network</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

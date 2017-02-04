@@ -11,6 +11,8 @@
 #include <PST4Packets.hpp>
 #include <cstring>
 
+#include "PST4RemoteUser.hpp"
+
 namespace PST4
 {
 	class NetSubSystem : public Annwvyn::AnnUserSubSystem
@@ -37,5 +39,7 @@ namespace PST4
 		echoPacket p;
 		double lastHeartbeatTime;
 		size_t sessionId;
+
+		std::unordered_map<size_t, std::unique_ptr<RemoteUser>> remotes;
 	};
 }
