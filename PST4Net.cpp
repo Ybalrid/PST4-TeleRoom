@@ -94,6 +94,12 @@ void NetSubSystem::update()
 		for (packet = peer->Receive(); packet;
 			peer->DeallocatePacket(packet), packet = peer->Receive())
 		{
+			if (packet->data[0] == ID_PST5_MESSAGE_NOTIFY_SESSION_END)
+			{
+				auto sessionEnded = reinterpret_cast<sessionEndedPacket*>(packet->data);
+				remotes.erase(sessionEnded->sessionId);
+			}
+
 			if (!sessionId)
 			{
 				if (packet->data[0] == ID_PST4_MESSAGE_SESSION_ID)
