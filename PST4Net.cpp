@@ -23,6 +23,9 @@ sessionId{ 0 }
 	peer->Connect(serverAddress.c_str(), port, nullptr, 0);
 	AnnDebug() << "Requested connection to " << serverAddress << ':' << port;
 	netState = NetState::READY;
+
+	//peer->AttachPlugin(&rakvoice);
+	//rakvoice.Init(VoiceSystem::SAMPLE_RATE, sizeof(VoiceSystem::sample_t)*VoiceSystem::BUFFER_SIZE);
 }
 
 NetSubSystem::~NetSubSystem()
@@ -39,6 +42,8 @@ bool NetSubSystem::needUpdate()
 
 void NetSubSystem::update()
 {
+	voiceSystem.capture();
+
 	switch (netState)
 	{
 	default:
@@ -73,9 +78,11 @@ void NetSubSystem::update()
 		//Transmit current poses to server :
 		if (sessionId)
 		{
+			//Send head position
 			headPosePacket head{ sessionId, AnnGetVRRenderer()->trackedHeadPose.position, AnnGetVRRenderer()->trackedHeadPose.orientation };
 			peer->Send(reinterpret_cast<char*>(&head), sizeof(headPosePacket), LOW_PRIORITY, UNRELIABLE, 0, serverSystemAddress, false);
 
+			//If hands positions available, send hands positions
 			handPosePacket handPose(sessionId, false);
 			if (AnnGetVRRenderer()->getRecognizedControllerCount() > 0)
 			{
@@ -83,6 +90,37 @@ void NetSubSystem::update()
 				handPose = handPosePacket(sessionId, controllers[0]->getWorldPosition(), controllers[0]->getWorldOrientation(), controllers[1]->getWorldPosition(), controllers[1]->getWorldOrientation());
 			}
 			peer->Send(reinterpret_cast<char*>(&handPose), sizeof handPose, LOW_PRIORITY, UNRELIABLE, 0, serverSystemAddress, false);
+
+			//If voice available, send voice packet
+			if (voiceSystem.bufferAvailable())
+			{
+				auto buffer = voiceSystem.getNextBufferToSend();
+				voiceSystem.debugPlayback(&buffer);
+
+				std::array<std::vector<VoiceSystem::byte_t>, VoiceSystem::FRAMES_PER_BUFFER> compressed;
+				voicePacket voice(sessionId);
+
+				for (auto i{ 0 }; i < VoiceSystem::FRAMES_PER_BUFFER; i++)
+				{
+					compressed[i] = voiceSystem.encode(&buffer, i);
+					AnnDebug() << "frame " << i << " compressed datalen : " << compressed[i].size();
+					voice.frameSizes[i] = unsigned char(compressed[i].size());
+					memcpy(voice.data + voice.dataLen, compressed[i].data(), compressed[i].size());
+					voice.dataLen += unsigned char(compressed[i].size());
+				}
+
+				AnnDebug() << "dataLen at the end is : " << size_t(voice.dataLen);
+
+				size_t sizeToSend(6 * sizeof(char) + sizeof(size_t) + voice.dataLen);
+				AnnDebug() << "size sent :" << sizeToSend;
+
+				//voicePacket voice(sessionId, buffer);
+				peer->Send(reinterpret_cast<char*>(&voice), sizeof voice, IMMEDIATE_PRIORITY, RELIABLE_ORDERED, 1, serverSystemAddress, false);
+
+				;;;
+			}
+			else
+				voiceSystem.debugPlayback();
 		}
 
 		static int echoTime = 0;
@@ -150,6 +188,18 @@ void NetSubSystem::update()
 							handPose->rightPos.getAnnVect3(), handPose->rightOrient.getAnnQuaternion());
 					}
 					continue;
+				}
+				else if (packet->data[0] == ID_PST4_MESSAGE_VOICE_BUFFER)
+				{
+					auto voice = reinterpret_cast<voicePacket*>(packet->data);
+					if (voice->sessionId != sessionId)
+					{
+						//Extract data
+
+						//decode audio
+
+						//make associatedConnectedRemote queue that buffer
+					}
 				}
 			}
 

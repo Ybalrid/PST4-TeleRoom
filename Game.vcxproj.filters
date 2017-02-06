@@ -9,6 +9,9 @@
     <ClCompile Include="PST4Net.cpp">
       <Filter>Network</Filter>
     </ClCompile>
+    <ClCompile Include="PST4VoiceSystem.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="pch">
@@ -16,6 +19,9 @@
     </Filter>
     <Filter Include="Network">
       <UniqueIdentifier>{2b623d1e-26ce-49d0-a969-775a00c991df}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external">
+      <UniqueIdentifier>{b0710a72-476c-4a3c-9d7d-6f6e99eca552}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -30,6 +36,9 @@
       <Filter>Network</Filter>
     </ClInclude>
     <ClInclude Include="PST4RemoteUser.hpp">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="PST4VoiceSystem.hpp">
       <Filter>Network</Filter>
     </ClInclude>
   </ItemGroup>

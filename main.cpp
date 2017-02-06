@@ -4,7 +4,6 @@
 //Include Annwvyn Engine.
 #include <Annwvyn.h>
 //Every Annwvyn classes are in the Annwvyn namespace
-using namespace Annwvyn;
 
 //Include our level/stages here
 #include "myLevel.hpp"
@@ -12,6 +11,7 @@ using namespace Annwvyn;
 
 constexpr const char* const server{ "localhost" };
 
+using namespace Annwvyn;
 AnnMain() //The application entry point is "AnnMain()". return type int.
 {
 	//Initialize the engine
