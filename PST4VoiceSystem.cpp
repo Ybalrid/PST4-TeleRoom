@@ -163,6 +163,10 @@ void VoiceSystem::debugPlayback(buffer640* buffer)
 		alBufferData(playbackQueue[newIndex], AL_FORMAT_MONO16, buffer->data(), BUFFER_SIZE * sizeof(sample_t), SAMPLE_RATE);
 		alSourceQueueBuffers(playbackSource, 1, &playbackQueue[newIndex]);
 		indexLastQueued = ALuint(newIndex);
+
+		AnnDebug() << "index last queued = " << indexLastQueued;
+		AnnDebug() << "index Processed = " << indexProcessed;
+		AnnDebug() << "Q - P = " << int(indexLastQueued) - int(indexProcessed);
 	}
 
 	ALint state;
@@ -198,14 +202,14 @@ VoiceSystem::buffer640 VoiceSystem::decode(unsigned char* frameSizes, unsigned c
 
 	for (auto i{ 0 }; i < FRAMES_PER_BUFFER; ++i)
 	{
-		AnnDebug() << "decoding frame " << i << " at " << dataPosition << "Bytes into the data";
+		//AnnDebug() << "decoding frame " << i << " at " << dataPosition << "Bytes into the data";
 		//data + dataPosition will point to the 1st byte of the current frame
 		speex_bits_read_from(&decBits, reinterpret_cast<byte_t*>(data) + dataPosition, frameSizes[i]);
 
 		//data has to be written on the buffer array. Buffer has FRAME_PER_BUFFER worth of data in it, each frames are FRAME_SIZE samples
 		speex_decode_int(dec_state, &decBits, buffer.data() + (i * FRAME_SIZE));
 
-		AnnDebug() << "wrote data to buffer at position " << i*FRAME_SIZE;
+		//AnnDebug() << "wrote data to buffer at position " << i*FRAME_SIZE;
 		dataPosition += frameSizes[i];
 	}
 
