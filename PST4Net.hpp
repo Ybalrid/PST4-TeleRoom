@@ -40,6 +40,15 @@ namespace PST4
 		static NetSubSystem* getNet();
 
 	private:
+
+		void sendCycle();
+		void handleRecivedHeadPose();
+		void handleReceivedHandPose();
+		void handleReceivedVoiceBuffer();
+		bool waitAndRequestSessionID();
+		void handleEndOfRemoteSession();
+		void receiveCycle();
+
 		///State
 		NetState netState;
 
