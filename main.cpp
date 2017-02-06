@@ -9,7 +9,7 @@
 #include "myLevel.hpp"
 #include "PST4Net.hpp"
 
-constexpr const char* const server{ "localhost" };
+constexpr const char* const server{ "annwvyn.org" };
 
 using namespace Annwvyn;
 AnnMain() //The application entry point is "AnnMain()". return type int.

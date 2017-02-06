@@ -151,11 +151,10 @@ void NetSubSystem::handleReceivedVoiceBuffer()
 {
 	auto voice = reinterpret_cast<voicePacket*>(packet->data);
 
-	auto buffer = voiceSystem.decode(voice->frameSizes, voice->data);
-	voiceSystem.debugPlayback(&buffer);
-
 	if (voice->sessionId != sessionId)
 	{
+		auto buffer = voiceSystem.decode(voice->frameSizes, voice->data);
+		voiceSystem.debugPlayback(&buffer);
 		//Extract data
 
 		//decode audio
@@ -164,7 +163,7 @@ void NetSubSystem::handleReceivedVoiceBuffer()
 	}
 }
 
-bool NetSubSystem::waitAndRequestSessionID()
+void NetSubSystem::waitAndRequestSessionID()
 {
 	if (packet->data[0] == ID_PST4_MESSAGE_SESSION_ID)
 	{
@@ -176,9 +175,7 @@ bool NetSubSystem::waitAndRequestSessionID()
 	{
 		serverToClientIdPacket rq(0);
 		peer->Send(reinterpret_cast<char*>(&rq), sizeof rq, IMMEDIATE_PRIORITY, RELIABLE, 0, serverSystemAddress, false);
-		return true;
 	}
-	return false;
 }
 
 void NetSubSystem::handleEndOfRemoteSession()
@@ -227,7 +224,7 @@ void NetSubSystem::receiveCycle()
 			switch (packet->data[0])
 			{
 				//In all cases : if a remote session has ended,
-			case ID_PST5_MESSAGE_NOTIFY_SESSION_END:
+			case ID_PST4_MESSAGE_NOTIFY_SESSION_END:
 				handleEndOfRemoteSession();
 
 			case ID_CONNECTION_LOST:
@@ -247,7 +244,7 @@ void NetSubSystem::receiveCycle()
 
 			if (!sessionId)
 			{
-				if (waitAndRequestSessionID()) continue;
+				waitAndRequestSessionID();
 			}
 			else //We know our own session, we can handle important game messages :
 			{

@@ -45,7 +45,7 @@ namespace PST4
 		void handleRecivedHeadPose();
 		void handleReceivedHandPose();
 		void handleReceivedVoiceBuffer();
-		bool waitAndRequestSessionID();
+		void waitAndRequestSessionID();
 		void handleEndOfRemoteSession();
 		void receiveCycle();
 
