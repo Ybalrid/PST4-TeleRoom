@@ -82,17 +82,17 @@ void NetSubSystem::sendCycle()
 			for (auto i{ 0 }; i < VoiceSystem::FRAMES_PER_BUFFER; i++)
 			{
 				compressed[i] = voiceSystem.encode(&buffer, i);
-				AnnDebug() << "frame " << i << " compressed datalen : " << compressed[i].size();
+				//AnnDebug() << "frame " << i << " compressed datalen : " << compressed[i].size();
 				voice.frameSizes[i] = unsigned char(compressed[i].size());
 				memcpy(voice.data + voice.dataLen, compressed[i].data(), compressed[i].size());
 				voice.dataLen += unsigned char(compressed[i].size());
 			}
 
-			AnnDebug() << "dataLen at the end is : " << size_t(voice.dataLen);
+			//AnnDebug() << "dataLen at the end is : " << size_t(voice.dataLen);
 
 			//TODO see if we can do fixed lenght packets for that.
 			size_t sizeToSend(6 * sizeof(char) + sizeof(size_t) + voice.dataLen);
-			AnnDebug() << "size sent :" << sizeToSend;
+			//AnnDebug() << "size sent :" << sizeToSend;
 
 			//voicePacket voice(sessionId, buffer);
 			peer->Send(reinterpret_cast<char*>(&voice), sizeof voice, IMMEDIATE_PRIORITY, RELIABLE_ORDERED, 1, serverSystemAddress, false);
