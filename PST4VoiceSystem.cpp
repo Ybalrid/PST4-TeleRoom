@@ -47,7 +47,16 @@ VoiceSystem::VoiceSystem()
 	alGenSources(1, &playbackSource);
 	alSourcef(playbackSource, AL_GAIN, 1);
 
-	alGenBuffers(ALsizei(playbackQueue.size()), playbackQueue.data());
+	//alGenBuffers(ALsizei(playbackQueue.size()), playbackQueue.data());
+
+	//Create some initial buffers
+	/*for (int i = 0; i < PLAYBACK_CACHE; i++)
+	{
+		ALuint buffer;
+		alGenBuffers(1, &buffer);
+		availableBufferList.push_back(buffer);
+	}*/
+
 	indexProcessed = 0;
 	indexLastQueued = 0;
 
@@ -132,41 +141,38 @@ void VoiceSystem::debugPlayback(buffer640* buffer)
 	auto position = AnnGetVRRenderer()->trackedHeadPose.position;
 	alSource3f(playbackSource, AL_POSITION, position.x, position.y, position.z);
 
-	//We emulate some kind of "ring buffer" here. We will feed the buffer to the queue sequentially, so we only need to know
-	//how many the source has allready gone through to know where we can "unqeue" them
 	ALint processed;
 	alGetSourcei(playbackSource, AL_BUFFERS_PROCESSED, &processed);
 	//AnnDebug() << "processed " << processed;
 	if (processed > 0)
 	{
-		//AnnDebug() << "should have played " << indexProcessed + processed;
-		//if we don't go out of the array :
-		if (indexProcessed + processed < playbackQueue.size())
+		for (auto i = 0; i < processed; i++)
 		{
-			alSourceUnqueueBuffers(playbackSource, processed, playbackQueue.data() + indexProcessed);
-			indexProcessed += processed;
-		}
-		else
-		{
-			auto diff = (indexProcessed + processed) - playbackQueue.size();
-			alSourceUnqueueBuffers(playbackSource, processed - ALsizei(diff), playbackQueue.data() + indexProcessed);
-			alSourceUnqueueBuffers(playbackSource, ALsizei(diff), playbackQueue.data());
-			indexProcessed = ALuint(diff);
+			auto wasFront = playbackQueue.front();
+			playbackQueue.pop_front();
+			availableBufferList.push_back(wasFront);
+			alSourceUnqueueBuffers(playbackSource, 1, &wasFront);
 		}
 	}
 
 	//If we've been called with a buffer, we will load the data in OpenAL and queue it
 	if (buffer)
 	{
-		auto newIndex = (indexLastQueued + 1) % playbackQueue.size();
-		//AnnDebug() << "new data for buffer at index " << newIndex;
-		alBufferData(playbackQueue[newIndex], AL_FORMAT_MONO16, buffer->data(), BUFFER_SIZE * sizeof(sample_t), SAMPLE_RATE);
-		alSourceQueueBuffers(playbackSource, 1, &playbackQueue[newIndex]);
-		indexLastQueued = ALuint(newIndex);
+		if (availableBufferList.empty())
+		{
+			AnnDebug() << "no buffers were available!, adding one.";
+			ALuint newBuffer;
+			alGenBuffers(1, &newBuffer);
+			availableBufferList.push_back(newBuffer);
 
-		AnnDebug() << "index last queued = " << indexLastQueued;
-		AnnDebug() << "index Processed = " << indexProcessed;
-		AnnDebug() << "Q - P = " << int(indexLastQueued) - int(indexProcessed);
+			AnnDebug() << "System uses " << availableBufferList.size() + playbackQueue.size() << " OpenAL buffers";
+		}
+
+		auto nextBuffer = availableBufferList.front();
+		availableBufferList.pop_front();
+		alBufferData(nextBuffer, AL_FORMAT_MONO16, buffer->data(), BUFFER_SIZE * sizeof(sample_t), SAMPLE_RATE);
+		alSourceQueueBuffers(playbackSource, 1, &nextBuffer);
+		playbackQueue.push_back(nextBuffer);
 	}
 
 	ALint state;
