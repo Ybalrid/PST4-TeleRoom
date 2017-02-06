@@ -226,10 +226,12 @@ void NetSubSystem::receiveCycle()
 				//In all cases : if a remote session has ended,
 			case ID_PST4_MESSAGE_NOTIFY_SESSION_END:
 				handleEndOfRemoteSession();
+				break;
 
 			case ID_CONNECTION_LOST:
 				AnnDebug() << "Connection definitively lost";
 				netState = NetState::FALIED;
+				break;
 			case ID_SND_RECEIPT_ACKED:
 			{
 				uint32_t ack;
@@ -239,6 +241,7 @@ void NetSubSystem::receiveCycle()
 				else
 					AnnDebug() << "got ack for heartbeat " << ack << " and was expecting " << lastHBAck;
 			}
+			break;
 			default:break;
 			} ///////////////Enf of basic backet data :
 
