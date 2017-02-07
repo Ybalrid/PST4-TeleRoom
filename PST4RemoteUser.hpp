@@ -58,7 +58,7 @@ namespace PST4
 					alSourceUnqueueBuffers(audioSource, 1, &wasFront);
 				}
 
-				auto excessBuffers = availableBuffers.size() - VoiceSystem::PLAYBACK_CACHE;
+				auto excessBuffers = static_cast<int>(availableBuffers.size()) - static_cast<int>(VoiceSystem::PLAYBACK_CACHE);
 				if (excessBuffers > 0)
 				{
 					Annwvyn::AnnDebug() << "Too much buffers available, removing " << excessBuffers << " front the available ones";
