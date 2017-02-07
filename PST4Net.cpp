@@ -150,7 +150,7 @@ void NetSubSystem::handleReceivedVoiceBuffer()
 {
 	/*	auto voice = reinterpret_cast<voicePacket*>(packet->data);*/
 
-	RakNet::BitStream voice(packet->data, packet->length, false);
+	RakNet::BitStream voice(packet->data, packet->length, true);
 
 	size_t remoteId;
 	unsigned char dataLen = 0;
@@ -159,14 +159,16 @@ void NetSubSystem::handleReceivedVoiceBuffer()
 	voice.IgnoreBytes(1);
 	voice.Read(reinterpret_cast<char*>(&remoteId), sizeof(size_t));
 	voice.Read(reinterpret_cast<char*>(frameSizes), 4);
-	voice.Read(reinterpret_cast<char*>(dataLen), 1);
+	voice.Read(reinterpret_cast<char*>(&dataLen), 1);
 
 	if (remoteId != sessionId)
 	{
 		unsigned char* data = new unsigned char[dataLen];
+		voice.Read(reinterpret_cast<char*>(&data), dataLen);
 
 		//Extract audio buffer from the encoded frame
 		auto buffer = voiceSystem.decode(frameSizes, data);
+		delete[] data;
 
 		//make associatedConnectedRemote queue that buffer
 		if (remotes.count(remoteId) == 0) return; //If the remote is unknown
