@@ -64,13 +64,17 @@ VoiceSystem::VoiceSystem()
 	//encode
 	speex_bits_init(&encBits);
 	enc_state = speex_encoder_init(&speex_nb_mode);
-	int frameLength;
+	int frameLength, samplingRate;
 	speex_encoder_ctl(enc_state, SPEEX_GET_FRAME_SIZE, &frameLength);
+	speex_encoder_ctl(enc_state, SPEEX_GET_SAMPLING_RATE, &samplingRate);
 
 	if (frameLength != BUFFER_SIZE / FRAMES_PER_BUFFER)
 		throw std::runtime_error("Inconsistent buffer/frame/frame per buffer configuration");
 	if (sizeof(sample_t) != sizeof(short))
 		throw std::runtime_error("sample format incompatible");
+
+	AnnDebug() << "Sampling Rate : " << samplingRate;
+	if (samplingRate != SAMPLE_RATE) throw std::runtime_error("Speex sample rate doesn't match the voice system sample rate");
 
 	speex_bits_reset(&encBits);
 
@@ -81,6 +85,15 @@ VoiceSystem::VoiceSystem()
 	speex_encoder_ctl(enc_state, SPEEX_SET_VAD, &vad);
 	speex_encoder_ctl(enc_state, SPEEX_GET_VAD, &state);
 	AnnDebug() << "speex encoder vad : " << state;
+
+	preprocess_state = speex_preprocess_state_init(frameLength, samplingRate);
+
+	int off = 1, on = 2;
+	//Activate preprocessing function : De-noising, Automatic Gain Control, Voice Activity Detection, Dereverb
+	speex_preprocess_ctl(preprocess_state, SPEEX_PREPROCESS_SET_DENOISE, &on);
+	speex_preprocess_ctl(preprocess_state, SPEEX_PREPROCESS_SET_AGC, &on);
+	speex_preprocess_ctl(preprocess_state, SPEEX_PREPROCESS_SET_VAD, &on);
+	speex_preprocess_ctl(preprocess_state, SPEEX_PREPROCESS_SET_DEREVERB, &on);
 }
 
 VoiceSystem::~VoiceSystem()
@@ -90,6 +103,7 @@ VoiceSystem::~VoiceSystem()
 	speex_bits_destroy(&decBits);
 	speex_encoder_destroy(enc_state);
 	speex_decoder_destroy(dec_state);
+	speex_preprocess_state_destroy(preprocess_state);
 
 	//clean AL
 	alDeleteSources(1, &playbackSource);
@@ -195,6 +209,9 @@ std::vector<VoiceSystem::byte_t> VoiceSystem::encode(buffer640* buffer, byte_t f
 	//AnnDebug() << "Encoding frame " << frame << " out of " << FRAMES_PER_BUFFER;
 	//initialize the encode
 	speex_bits_reset(&encBits);
+
+	speex_preprocess_run(preprocess_state, buffer->data() + (frame * 160));
+
 	speex_encode_int(enc_state, buffer->data() + (frame * 160), &encBits);
 
 	//Allocate buffer

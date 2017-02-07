@@ -5,6 +5,7 @@
 #include <deque>
 #include <algorithm>
 #include <speex/speex.h>
+#include <speex/speex_preprocess.h>
 
 namespace PST4
 {
@@ -74,5 +75,7 @@ namespace PST4
 		SpeexBits encBits, decBits;
 		void* enc_state;
 		void* dec_state;
+
+		SpeexPreprocessState* preprocess_state;
 	};
 }

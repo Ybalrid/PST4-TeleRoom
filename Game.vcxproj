@@ -175,7 +175,7 @@
       <DelayLoadDLLs>
       </DelayLoadDLLs>
       <PreventDllBinding>false</PreventDllBinding>
-      <AdditionalDependencies>libspeex.lib;RakNet_VS2008_DLL_Release_x64.lib;Annwvyn.lib;ws2_32.lib;OgreMain.lib;OIS.lib;LibOVR.lib;openvr_api.lib;Winmm.lib;BulletCollision.lib;BulletDynamics.lib;LinearMath.lib;OpenAL32.lib;libsndfile-1.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libspeex.lib;libspeexdsp.lib;RakNet_VS2008_DLL_Release_x64.lib;Annwvyn.lib;ws2_32.lib;OgreMain.lib;OIS.lib;LibOVR.lib;openvr_api.lib;Winmm.lib;BulletCollision.lib;BulletDynamics.lib;LinearMath.lib;OpenAL32.lib;libsndfile-1.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>echo Getting Annwvyn Dynamic Library from the SDK...
