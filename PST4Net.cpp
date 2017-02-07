@@ -102,12 +102,6 @@ void NetSubSystem::sendCycle()
 			voiceSystem.debugPlayback();
 	}
 
-	static int echoTime = 0;
-	if (++echoTime > 1000)
-	{
-		echoTime = 0;
-		peer->Send(reinterpret_cast<char*>(&p), sizeof(p), PacketPriority::LOW_PRIORITY, PacketReliability::UNRELIABLE, 0, serverSystemAddress, false);
-	}
 	if (AnnGetEngine()->getTimeFromStartupSeconds() - lastHeartbeatTime > 5)
 	{
 		heartbeatPacket heartbeat;
