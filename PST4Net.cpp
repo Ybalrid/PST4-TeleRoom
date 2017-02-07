@@ -82,19 +82,25 @@ void NetSubSystem::sendCycle()
 			for (auto i{ 0 }; i < VoiceSystem::FRAMES_PER_BUFFER; i++)
 			{
 				compressed[i] = voiceSystem.encode(&buffer, i);
-				//AnnDebug() << "frame " << i << " compressed datalen : " << compressed[i].size();
+				AnnDebug() << "frame " << i << " compressed datalen : " << compressed[i].size();
 				voice.frameSizes[i] = unsigned char(compressed[i].size());
 				memcpy(voice.data + voice.dataLen, compressed[i].data(), compressed[i].size());
 				voice.dataLen += unsigned char(compressed[i].size());
 			}
 
-			//AnnDebug() << "dataLen at the end is : " << size_t(voice.dataLen);
+			RakNet::BitStream bitstream;
+			bitstream.Write(RakNet::MessageID(ID_PST4_MESSAGE_VOICE_BUFFER));
+			bitstream.Write(reinterpret_cast<char*>(&sessionId), sizeof(size_t));
+			bitstream.Write(reinterpret_cast<VoiceSystem::byte_t*>(voice.frameSizes), 4);
+			bitstream.Write(reinterpret_cast<char*>(&voice.dataLen), sizeof(unsigned char));
+			bitstream.Write(reinterpret_cast<VoiceSystem::byte_t*>(voice.data), voice.dataLen);
 
 			//TODO see if we can do fixed lenght packets for that.
-			//size_t sizeToSend(6 * sizeof(char) + sizeof(size_t) + voice.dataLen);
-			//AnnDebug() << "size sent :" << sizeToSend;
+			size_t sizeToSend(6 * sizeof(char) + sizeof(size_t) + voice.dataLen);
+			AnnDebug() << "size sent :" << sizeToSend;
 
-			peer->Send(reinterpret_cast<char*>(&voice), sizeof voice, IMMEDIATE_PRIORITY, RELIABLE_ORDERED, 1, serverSystemAddress, false);
+			//peer->Send(, sizeof sizeToSend, IMMEDIATE_PRIORITY, RELIABLE_ORDERED, 1, serverSystemAddress, false);
+			peer->Send(&bitstream, IMMEDIATE_PRIORITY, RELIABLE_ORDERED, 1, serverSystemAddress, false);
 
 			;;;
 		}
@@ -142,16 +148,29 @@ void NetSubSystem::handleReceivedHandPose()
 
 void NetSubSystem::handleReceivedVoiceBuffer()
 {
-	auto voice = reinterpret_cast<voicePacket*>(packet->data);
+	/*	auto voice = reinterpret_cast<voicePacket*>(packet->data);*/
 
-	if (voice->sessionId != sessionId)
+	RakNet::BitStream voice(packet->data, packet->length, false);
+
+	size_t remoteId;
+	unsigned char dataLen = 0;
+	unsigned char frameSizes[4];
+
+	voice.IgnoreBytes(1);
+	voice.Read(reinterpret_cast<char*>(&remoteId), sizeof(size_t));
+	voice.Read(reinterpret_cast<char*>(frameSizes), 4);
+	voice.Read(reinterpret_cast<char*>(dataLen), 1);
+
+	if (remoteId != sessionId)
 	{
+		unsigned char* data = new unsigned char[dataLen];
+
 		//Extract audio buffer from the encoded frame
-		auto buffer = voiceSystem.decode(voice->frameSizes, voice->data);
+		auto buffer = voiceSystem.decode(frameSizes, data);
 
 		//make associatedConnectedRemote queue that buffer
-		if (remotes.count(voice->sessionId) == 0) return; //If the remote is unknown
-		remotes[voice->sessionId]->steamVoice(&buffer);
+		if (remotes.count(remoteId) == 0) return; //If the remote is unknown
+		remotes[remoteId]->steamVoice(&buffer);
 	}
 }
 
