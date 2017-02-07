@@ -77,6 +77,10 @@ VoiceSystem::VoiceSystem()
 	//decode
 	speex_bits_init(&decBits);
 	dec_state = speex_decoder_init(&speex_nb_mode);
+	int vad = 1, state;
+	speex_encoder_ctl(enc_state, SPEEX_SET_VAD, &vad);
+	speex_encoder_ctl(enc_state, SPEEX_GET_VAD, &state);
+	AnnDebug() << "speex encoder vad : " << state;
 }
 
 VoiceSystem::~VoiceSystem()
