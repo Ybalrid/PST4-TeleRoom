@@ -164,7 +164,7 @@ void NetSubSystem::handleReceivedVoiceBuffer()
 	if (remoteId != sessionId)
 	{
 		unsigned char* data = new unsigned char[dataLen];
-		voice.Read(reinterpret_cast<char*>(&data), dataLen);
+		voice.Read(reinterpret_cast<char*>(data), dataLen);
 
 		//Extract audio buffer from the encoded frame
 		auto buffer = voiceSystem.decode(frameSizes, data);
