@@ -7,85 +7,92 @@ using namespace Annwvyn;
 
 VoiceSystem::VoiceSystem()
 {
+	//This should even be optimized away by the compiler becaue of constexpr,
+	//Of if I did something really stupid, it will crash the program before
+	//doing unexplicable esoteric bugs sent directly bht the lord of darkness.
 	if (!sanityCheck()) throw std::runtime_error("There's a problem with data size");
-	//Detect input device:
+
+	//Detect what input device to use
 	ALchar* inputDeviceIdentifier = nullptr;
+
+	//If we can enumerate devices, and the rendersystem "hint" about what device to use (ex : Oculus and "Rift Audio")
 	if (alcIsExtensionPresent(nullptr, "ALC_ENUMERATE_ALL_EXT") == AL_TRUE && AnnGetVRRenderer()->usesCustomAudioDevice())
 	{
-		//Open the audio device specified by the VR System
+		//Get the list of devices.
+		//This is in on a "[string]\0[string]\0[string]\0\0" format that is a bit annoying in C++, so detectInputDevice
+		//will fill an array of std::string with them instead.
 		detectInputDevice(alcGetString(nullptr, ALC_CAPTURE_DEVICE_SPECIFIER));
 		for (auto& deviceName : detectedDevice)
 		{
+			//Found the hinted device
 			if (deviceName.find(AnnGetVRRenderer()->getAudioDeviceIdentifierSubString()) != std::string::npos)
 			{
+				//Store the name
 				auto len = deviceName.length() + 1;
 				inputDeviceIdentifier = new char[len];
 				secure_strcpy(inputDeviceIdentifier, len, deviceName.c_str());
+				break;
 			}
 		}
 	}
 
-	//Open Input device
+	//Open Input device. If inputDeviceIdentifier is still NULL at this point, it will open the OS default device
 	inputDevice = alcCaptureOpenDevice(inputDeviceIdentifier, SAMPLE_RATE, AL_FORMAT_MONO16, CAPTURE_BUFFER_SIZE);
-	if (inputDeviceIdentifier) delete[] inputDeviceIdentifier;
 
+	//if something got real wrong here
 	if (!inputDevice)
 	{
 		switch (alGetError())
 		{
-		case ALC_INVALID_VALUE: std::cout << "invalid value given at capture device creation\n"; break;
-		case ALC_OUT_OF_MEMORY: std::cout << "specified device is invalid or cannot capture audio"; break;
+		case ALC_INVALID_VALUE: AnnDebug() << "invalid value given at capture device creation"; break;
+		case ALC_OUT_OF_MEMORY: AnnDebug() << "specified device is invalid or cannot capture audio"; break;
 		default:break;
 		}
+
+		throw std::runtime_error("Cannot open device : " + std::string(inputDeviceIdentifier));
 	}
 	alcCaptureStart(inputDevice);
-	//AnnDebug() << alcGetError(inputDevice);
-	//AnnDebug() << alGetError();
-	//AnnDebug() << "Error we don't want : " << ALC_INVALID_DEVICE;
+	if (alcGetError(inputDevice) == ALC_INVALID_DEVICE)
+	{
+		AnnDebug() << "Selected device: " << inputDeviceIdentifier << " is not a recording device";
+	}
+	if (inputDeviceIdentifier) delete[] inputDeviceIdentifier;
 
-	//debugDevice = alcOpenDevice(nullptr);
 	alGenSources(1, &playbackSource);
 	alSourcef(playbackSource, AL_GAIN, 1);
 
-	//alGenBuffers(ALsizei(playbackQueue.size()), playbackQueue.data());
-
-	//Create some initial buffers
-	/*for (int i = 0; i < PLAYBACK_CACHE; i++)
-	{
-		ALuint buffer;
-		alGenBuffers(1, &buffer);
-		availableBufferList.push_back(buffer);
-	}*/
-
-	indexProcessed = 0;
-	indexLastQueued = 0;
-
-	//Compression
+	//encode
 	speex_bits_init(&encBits);
 	enc_state = speex_encoder_init(&speex_nb_mode);
-	int output;
-	speex_encoder_ctl(enc_state, SPEEX_GET_FRAME_SIZE, &output);
+	int frameLength;
+	speex_encoder_ctl(enc_state, SPEEX_GET_FRAME_SIZE, &frameLength);
 
-	if (output != BUFFER_SIZE / FRAMES_PER_BUFFER)
+	if (frameLength != BUFFER_SIZE / FRAMES_PER_BUFFER)
 		throw std::runtime_error("Inconsistent buffer/frame/frame per buffer configuration");
 	if (sizeof(sample_t) != sizeof(short))
 		throw std::runtime_error("sample format incompatible");
 
 	speex_bits_reset(&encBits);
-	auto maxNbBytes = speex_bits_nbytes(&encBits);
-	//AnnDebug() << maxNbBytes << "number of bytes for 160 samples. (uncompressed : was 320)";
 
+	//decode
 	speex_bits_init(&decBits);
 	dec_state = speex_decoder_init(&speex_nb_mode);
 }
 
 VoiceSystem::~VoiceSystem()
 {
+	//clean speex
 	speex_bits_destroy(&encBits);
 	speex_bits_destroy(&decBits);
 	speex_encoder_destroy(enc_state);
 	speex_decoder_destroy(dec_state);
 
+	//clean AL
+	alDeleteSources(1, &playbackSource);
+	for (auto buffer : availableBufferList)
+		alDeleteBuffers(1, &buffer);
+	for (auto buffer : playbackQueue)
+		alDeleteBuffers(1, &buffer);
 	alcCaptureStop(inputDevice);
 	alcCaptureCloseDevice(inputDevice);
 }
@@ -93,11 +100,11 @@ VoiceSystem::~VoiceSystem()
 void VoiceSystem::detectInputDevice(const char* deviceList)
 {
 	if (!deviceList || *deviceList == '\0')
-		std::cout << "enumerated device list empty";
+		AnnDebug() << "enumerated device list empty";
 	else do
 	{
 		std::string deviceName(deviceList);
-		std::cout << "Audio device : " << deviceName << '\n';
+		AnnDebug() << "Audio device : " << deviceName << '\n';
 		detectedDevice.push_back(deviceName);
 
 		deviceList += strlen(deviceList) + 1;
@@ -107,7 +114,6 @@ void VoiceSystem::detectInputDevice(const char* deviceList)
 void VoiceSystem::capture()
 {
 	alcGetIntegerv(inputDevice, ALC_CAPTURE_SAMPLES, sizeof availableInputSamples, &availableInputSamples);
-	////AnnDebug() << "debug : availableInputSamples = " << availableInputSamples;
 	while (availableInputSamples > BUFFER_SIZE)
 	{
 		buffer640 tmpBuffer;
@@ -143,7 +149,6 @@ void VoiceSystem::debugPlayback(buffer640* buffer)
 
 	ALint processed;
 	alGetSourcei(playbackSource, AL_BUFFERS_PROCESSED, &processed);
-	//AnnDebug() << "processed " << processed;
 	if (processed > 0)
 	{
 		for (auto i = 0; i < processed; i++)

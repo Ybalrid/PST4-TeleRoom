@@ -91,10 +91,9 @@ void NetSubSystem::sendCycle()
 			//AnnDebug() << "dataLen at the end is : " << size_t(voice.dataLen);
 
 			//TODO see if we can do fixed lenght packets for that.
-			size_t sizeToSend(6 * sizeof(char) + sizeof(size_t) + voice.dataLen);
+			//size_t sizeToSend(6 * sizeof(char) + sizeof(size_t) + voice.dataLen);
 			//AnnDebug() << "size sent :" << sizeToSend;
 
-			//voicePacket voice(sessionId, buffer);
 			peer->Send(reinterpret_cast<char*>(&voice), sizeof voice, IMMEDIATE_PRIORITY, RELIABLE_ORDERED, 1, serverSystemAddress, false);
 
 			;;;
@@ -153,13 +152,12 @@ void NetSubSystem::handleReceivedVoiceBuffer()
 
 	if (voice->sessionId != sessionId)
 	{
+		//Extract audio buffer from the encoded frame
 		auto buffer = voiceSystem.decode(voice->frameSizes, voice->data);
-		voiceSystem.debugPlayback(&buffer);
-		//Extract data
-
-		//decode audio
 
 		//make associatedConnectedRemote queue that buffer
+		if (remotes.count(voice->sessionId) == 0) return; //If the remote is unknown
+		remotes[voice->sessionId]->steamVoice(&buffer);
 	}
 }
 

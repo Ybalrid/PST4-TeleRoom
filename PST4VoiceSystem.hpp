@@ -61,16 +61,16 @@ namespace PST4
 		///Process the list of input devices, and will populate the "detectedDevice" member accordingly
 		void detectInputDevice(const char* deviceList);
 
+		//OpenAL
+		std::vector<std::string> detectedDevice;
+		ALint availableInputSamples;
+		bufferQueue queue;
 		ALCdevice* inputDevice;
 		ALuint playbackSource;
 		bufferPlaybackQueue playbackQueue;
 		bufferPlaybackQueue availableBufferList;
-		ALuint indexProcessed, indexLastQueued, available;
 
-		std::vector<std::string> detectedDevice;
-		ALint availableInputSamples;
-		bufferQueue queue;
-
+		//Speex ----------
 		SpeexBits encBits, decBits;
 		void* enc_state;
 		void* dec_state;
