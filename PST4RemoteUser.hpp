@@ -50,12 +50,24 @@ namespace PST4
 			alGetSourcei(audioSource, AL_BUFFERS_PROCESSED, &processed);
 			if (processed > 0)
 			{
-				for (auto i = 0; i < processed; i++)
+				for (auto i{ 0 }; i < processed; i++)
 				{
 					auto wasFront = playbackQueue.front();
 					playbackQueue.pop_front();
 					availableBuffers.push_back(wasFront);
 					alSourceUnqueueBuffers(audioSource, 1, &wasFront);
+				}
+
+				auto excessBuffers = availableBuffers.size() - VoiceSystem::PLAYBACK_CACHE;
+				if (excessBuffers > 0)
+				{
+					Annwvyn::AnnDebug() << "Too much buffers available, removing " << excessBuffers << " front the available ones";
+					for (auto i{ 0 }; i < excessBuffers; i++)
+					{
+						auto front = availableBuffers.front();
+						availableBuffers.pop_front();
+						alDeleteBuffers(1, &front);
+					}
 				}
 			}
 
