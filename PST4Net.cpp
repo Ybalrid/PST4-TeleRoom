@@ -66,7 +66,8 @@ void NetSubSystem::sendCycle()
 		if (AnnGetVRRenderer()->getRecognizedControllerCount() > 0)
 		{
 			auto controllers = AnnGetVRRenderer()->getHandControllerArray();
-			handPose = handPosePacket(sessionId, controllers[0]->getWorldPosition(), controllers[0]->getWorldOrientation(), controllers[1]->getWorldPosition(), controllers[1]->getWorldOrientation());
+			if(controllers[0] && controllers[1])
+				handPose = handPosePacket(sessionId, controllers[0]->getWorldPosition(), controllers[0]->getWorldOrientation(), controllers[1]->getWorldPosition(), controllers[1]->getWorldOrientation());
 		}
 		peer->Send(reinterpret_cast<char*>(&handPose), sizeof handPose, LOW_PRIORITY, UNRELIABLE, 0, serverSystemAddress, false);
 
