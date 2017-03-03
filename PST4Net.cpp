@@ -23,9 +23,17 @@ sessionId{ 0 }
 	peer->Connect(serverAddress.c_str(), port, nullptr, 0);
 	AnnDebug() << "Requested connection to " << serverAddress << ':' << port;
 	netState = NetState::READY;
-
-	//peer->AttachPlugin(&rakvoice);
-	//rakvoice.Init(VoiceSystem::SAMPLE_RATE, sizeof(VoiceSystem::sample_t)*VoiceSystem::BUFFER_SIZE);
+	try
+	{
+		voiceSystem = std::make_unique<PST4::VoiceSystem>();
+	}
+	catch (const std::exception& e)
+	{
+		AnnDebug() << "Exception catched : "
+			<< e.what();
+		AnnDebug() << "The user probably doesn't have a microphone. the voiceSystem is not initialized";
+		voiceSystem.reset(nullptr);
+	}
 }
 
 NetSubSystem::~NetSubSystem()
@@ -42,7 +50,8 @@ bool NetSubSystem::needUpdate()
 
 void NetSubSystem::update()
 {
-	voiceSystem.capture();
+	if(voiceSystem)
+		voiceSystem->capture();
 	sendCycle();
 	receiveCycle();
 }
@@ -72,41 +81,44 @@ void NetSubSystem::sendCycle()
 		peer->Send(reinterpret_cast<char*>(&handPose), sizeof handPose, LOW_PRIORITY, UNRELIABLE, 0, serverSystemAddress, false);
 
 		//If voice available, send voice packet
-		if (voiceSystem.bufferAvailable())
+		if (voiceSystem)
 		{
-			auto buffer = voiceSystem.getNextBufferToSend();
-			//voiceSystem.debugPlayback(&buffer); //Piping your own voice to the headset with a delay is really disturbing.
-
-			std::array<std::vector<VoiceSystem::byte_t>, VoiceSystem::FRAMES_PER_BUFFER> compressed;
-			voicePacket voice(sessionId);
-
-			for (auto i{ 0 }; i < VoiceSystem::FRAMES_PER_BUFFER; i++)
+			if (voiceSystem->bufferAvailable())
 			{
-				compressed[i] = voiceSystem.encode(&buffer, i);
-				AnnDebug() << "frame " << i << " compressed datalen : " << compressed[i].size();
-				voice.frameSizes[i] = unsigned char(compressed[i].size());
-				memcpy(voice.data + voice.dataLen, compressed[i].data(), compressed[i].size());
-				voice.dataLen += unsigned char(compressed[i].size());
+				auto buffer = voiceSystem->getNextBufferToSend();
+				//voiceSystem->debugPlayback(&buffer); //Piping your own voice to the headset with a delay is really disturbing.
+
+				std::array<std::vector<VoiceSystem::byte_t>, VoiceSystem::FRAMES_PER_BUFFER> compressed;
+				voicePacket voice(sessionId);
+
+				for (auto i{ 0 }; i < VoiceSystem::FRAMES_PER_BUFFER; i++)
+				{
+					compressed[i] = voiceSystem->encode(&buffer, i);
+					AnnDebug() << "frame " << i << " compressed datalen : " << compressed[i].size();
+					voice.frameSizes[i] = unsigned char(compressed[i].size());
+					memcpy(voice.data + voice.dataLen, compressed[i].data(), compressed[i].size());
+					voice.dataLen += unsigned char(compressed[i].size());
+				}
+
+				RakNet::BitStream bitstream;
+				bitstream.Write(RakNet::MessageID(ID_PST4_MESSAGE_VOICE_BUFFER));
+				bitstream.Write(reinterpret_cast<char*>(&sessionId), sizeof(size_t));
+				bitstream.Write(reinterpret_cast<VoiceSystem::byte_t*>(voice.frameSizes), 4);
+				bitstream.Write(reinterpret_cast<char*>(&voice.dataLen), sizeof(unsigned char));
+				bitstream.Write(reinterpret_cast<VoiceSystem::byte_t*>(voice.data), voice.dataLen);
+
+				//TODO see if we can do fixed lenght packets for that.
+				size_t sizeToSend(6 * sizeof(char) + sizeof(size_t) + voice.dataLen);
+				AnnDebug() << "size sent :" << sizeToSend;
+
+				//peer->Send(, sizeof sizeToSend, IMMEDIATE_PRIORITY, RELIABLE_ORDERED, 1, serverSystemAddress, false);
+				peer->Send(&bitstream, IMMEDIATE_PRIORITY, RELIABLE_ORDERED, 1, serverSystemAddress, false);
 			}
-
-			RakNet::BitStream bitstream;
-			bitstream.Write(RakNet::MessageID(ID_PST4_MESSAGE_VOICE_BUFFER));
-			bitstream.Write(reinterpret_cast<char*>(&sessionId), sizeof(size_t));
-			bitstream.Write(reinterpret_cast<VoiceSystem::byte_t*>(voice.frameSizes), 4);
-			bitstream.Write(reinterpret_cast<char*>(&voice.dataLen), sizeof(unsigned char));
-			bitstream.Write(reinterpret_cast<VoiceSystem::byte_t*>(voice.data), voice.dataLen);
-
-			//TODO see if we can do fixed lenght packets for that.
-			size_t sizeToSend(6 * sizeof(char) + sizeof(size_t) + voice.dataLen);
-			AnnDebug() << "size sent :" << sizeToSend;
-
-			//peer->Send(, sizeof sizeToSend, IMMEDIATE_PRIORITY, RELIABLE_ORDERED, 1, serverSystemAddress, false);
-			peer->Send(&bitstream, IMMEDIATE_PRIORITY, RELIABLE_ORDERED, 1, serverSystemAddress, false);
-
-			;;;
+			else
+			{
+				voiceSystem->debugPlayback();
+			}
 		}
-		else
-			voiceSystem.debugPlayback();
 	}
 
 	if (AnnGetEngine()->getTimeFromStartupSeconds() - lastHeartbeatTime > 5)
@@ -149,7 +161,7 @@ void NetSubSystem::handleReceivedHandPose()
 
 void NetSubSystem::handleReceivedVoiceBuffer()
 {
-	/*	auto voice = reinterpret_cast<voicePacket*>(packet->data);*/
+	if (!voiceSystem) return;
 
 	RakNet::BitStream voice(packet->data, packet->length, true);
 
@@ -168,7 +180,7 @@ void NetSubSystem::handleReceivedVoiceBuffer()
 		voice.Read(reinterpret_cast<char*>(data), dataLen);
 
 		//Extract audio buffer from the encoded frame
-		auto buffer = voiceSystem.decode(frameSizes, data);
+		auto buffer = voiceSystem->decode(frameSizes, data);
 		delete[] data;
 
 		//make associatedConnectedRemote queue that buffer

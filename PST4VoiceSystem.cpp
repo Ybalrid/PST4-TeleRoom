@@ -48,8 +48,10 @@ VoiceSystem::VoiceSystem()
 		case ALC_OUT_OF_MEMORY: AnnDebug() << "specified device is invalid or cannot capture audio"; break;
 		default:break;
 		}
-
-		throw std::runtime_error("Cannot open device : " + std::string(inputDeviceIdentifier));
+		if (inputDeviceIdentifier)
+			throw std::runtime_error("Cannot open device : " + std::string(inputDeviceIdentifier));
+		else
+			throw std::runtime_error("Cannot open audio input device, and inputDeviceIdentifier is nullptr");
 	}
 	alcCaptureStart(inputDevice);
 	if (alcGetError(inputDevice) == ALC_INVALID_DEVICE)

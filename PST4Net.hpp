@@ -91,6 +91,6 @@ namespace PST4
 		//RakNet::RakVoice rakvoice; <- we're using our own
 
 		///Object that permit to record, encode and decode audio.
-		VoiceSystem voiceSystem;
+		std::unique_ptr<VoiceSystem> voiceSystem;
 	};
 }
