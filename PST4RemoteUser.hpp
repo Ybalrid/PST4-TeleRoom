@@ -44,7 +44,7 @@ namespace PST4
 			rightHand->setOrientation(rightOrient);
 		}
 
-		void steamVoice(VoiceSystem::buffer640* buffer)
+		void streamVoice(VoiceSystem::buffer640* buffer)
 		{
 			ALint processed;
 			alGetSourcei(audioSource, AL_BUFFERS_PROCESSED, &processed);

@@ -50,7 +50,7 @@ bool NetSubSystem::needUpdate()
 
 void NetSubSystem::update()
 {
-	if(voiceSystem)
+	if (voiceSystem)
 		voiceSystem->capture();
 	sendCycle();
 	receiveCycle();
@@ -75,7 +75,7 @@ void NetSubSystem::sendCycle()
 		if (AnnGetVRRenderer()->getRecognizedControllerCount() > 0)
 		{
 			auto controllers = AnnGetVRRenderer()->getHandControllerArray();
-			if(controllers[0] && controllers[1])
+			if (controllers[0] && controllers[1])
 				handPose = handPosePacket(sessionId, controllers[0]->getWorldPosition(), controllers[0]->getWorldOrientation(), controllers[1]->getWorldPosition(), controllers[1]->getWorldOrientation());
 		}
 		peer->Send(reinterpret_cast<char*>(&handPose), sizeof handPose, LOW_PRIORITY, UNRELIABLE, 0, serverSystemAddress, false);
@@ -185,7 +185,7 @@ void NetSubSystem::handleReceivedVoiceBuffer()
 
 		//make associatedConnectedRemote queue that buffer
 		if (remotes.count(remoteId) == 0) return; //If the remote is unknown
-		remotes[remoteId]->steamVoice(&buffer);
+		remotes[remoteId]->streamVoice(&buffer);
 	}
 }
 
