@@ -22,7 +22,7 @@ namespace PST4
 	public:
 
 		///State of the connection
-		enum class NetState { NOT_READY, READY, CONNECTED, FALIED };
+		enum class NetState { NOT_READY, READY, CONNECTED, FAILED };
 
 		///Connect to the port 42420 on the given host
 		NetSubSystem(const std::string& serverHostname);

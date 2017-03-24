@@ -50,7 +50,7 @@ bool NetSubSystem::needUpdate()
 
 void NetSubSystem::update()
 {
-	if(voiceSystem)
+	if (voiceSystem)
 		voiceSystem->capture();
 	sendCycle();
 	receiveCycle();
@@ -75,7 +75,7 @@ void NetSubSystem::sendCycle()
 		if (AnnGetVRRenderer()->getRecognizedControllerCount() > 0)
 		{
 			auto controllers = AnnGetVRRenderer()->getHandControllerArray();
-			if(controllers[0] && controllers[1])
+			if (controllers[0] && controllers[1])
 				handPose = handPosePacket(sessionId, controllers[0]->getWorldPosition(), controllers[0]->getWorldOrientation(), controllers[1]->getWorldPosition(), controllers[1]->getWorldOrientation());
 		}
 		peer->Send(reinterpret_cast<char*>(&handPose), sizeof handPose, LOW_PRIORITY, UNRELIABLE, 0, serverSystemAddress, false);
@@ -215,7 +215,7 @@ void NetSubSystem::receiveCycle()
 	switch (netState)
 	{
 	case NetState::NOT_READY:
-	case NetState::FALIED:
+	case NetState::FAILED:
 		break;
 
 	case NetState::READY: //Wait for the connection confirmation by the server
@@ -228,7 +228,7 @@ void NetSubSystem::receiveCycle()
 			{
 			case ID_CONNECTION_ATTEMPT_FAILED:
 				AnnDebug() << "Failed to connect to server : " << serverAddress << " on UDP port " << port;
-				netState = NetState::FALIED;
+				netState = NetState::FAILED;
 				break;
 			case ID_CONNECTION_REQUEST_ACCEPTED:
 				AnnDebug() << "We are connected to the server! ";
@@ -256,7 +256,7 @@ void NetSubSystem::receiveCycle()
 
 			case ID_CONNECTION_LOST:
 				AnnDebug() << "Connection definitively lost";
-				netState = NetState::FALIED;
+				netState = NetState::FAILED;
 				continue;
 			case ID_SND_RECEIPT_ACKED:
 			{
