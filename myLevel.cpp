@@ -9,20 +9,23 @@ MyLevel::MyLevel() : constructLevel()
 
 void MyLevel::load()
 {
-	//Load Ground:
-	auto Ground(addGameObject("Ground.mesh", "GroundPlane"));
-	Ground->setPosition({ 0, 0, 0 });
-	Ground->setUpPhysics();
+	AnnGetSceneryManager()->setAmbientLight(AnnColor(.6f, .6f, .6f));
+	auto house = addGameObject("teleroom/house.mesh");
+	house->setUpPhysics();
 
-	//Create a light source
-	auto Sun(addLightObject());
+	auto Table = addGameObject("teleroom/table.mesh");
+	Table->setPosition(-5, -1.5, 0);
+	Table->setUpPhysics();
+
+	//Add other source of light
+	auto Sun = addLightObject();
 	Sun->setType(AnnLightObject::ANN_LIGHT_DIRECTIONAL);
-	Sun->setDirection(AnnVect3{ -1, -1.5f, -1 }.normalisedCopy());
+	Sun->setDirection(AnnVect3::NEGATIVE_UNIT_Y + 1.5f* AnnVect3::NEGATIVE_UNIT_Z);
 
-	AnnGetSceneryManager()->setAmbientLight(AnnColor(.25f, .25f, .25));
-
-	auto player{ AnnGetPlayer() };
-	player->regroundOnPhysicsBody();
+	AnnGetPlayer()->setPosition(Annwvyn::AnnVect3(0, 0, 5));
+	AnnGetPlayer()->setOrientation(Ogre::Euler(0));
+	AnnGetPlayer()->resetPlayerPhysics();
+	AnnGetPlayer()->regroundOnPhysicsBody();
 }
 
 void MyLevel::runLogic()
