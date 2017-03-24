@@ -9,6 +9,7 @@ MyLevel::MyLevel() : constructLevel()
 
 void MyLevel::load()
 {
+	AnnGetSceneryManager()->setWorldBackgroundColor(AnnColor(0.8, 0.8, 0.8));
 	AnnGetSceneryManager()->setAmbientLight(AnnColor(.6f, .6f, .6f));
 	auto house = addGameObject("teleroom/house.mesh");
 	house->setUpPhysics();
