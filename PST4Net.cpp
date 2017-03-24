@@ -185,7 +185,7 @@ void NetSubSystem::handleReceivedVoiceBuffer()
 
 		//make associatedConnectedRemote queue that buffer
 		if (remotes.count(remoteId) == 0) return; //If the remote is unknown
-		remotes[remoteId]->steamVoice(&buffer);
+		remotes[remoteId]->streamVoice(&buffer);
 	}
 }
 

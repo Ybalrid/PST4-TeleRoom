@@ -15,11 +15,11 @@ namespace PST4
 	public:
 		constexpr static size_t SAMPLE_RATE{ 8000 };							//8000 is "telephone" quality. Good enough for now
 		constexpr static size_t DROP_THRESHOLD{ 15 };							//Will clear the recording queue if we accumulate half a sec of audio
-		//The size of the playback buffer is dynamically choosen
+		//The size of the playback buffer is dynamically chosen
 		constexpr static size_t PLAYBACK_CACHE{ 8 };							//Number of buffer in the playback queue
 		constexpr static size_t FRAME_SIZE{ 160 };								//Number of samples in a frame speex expect in "narrow band" mode
 		constexpr static size_t FRAMES_PER_BUFFER{ 4 };							//Number of frames in a buffer
-		constexpr static size_t BUFFER_SIZE{ 4 * FRAME_SIZE };					//Size of one buffer, in sample count. For speex compression, must be
+		constexpr static size_t BUFFER_SIZE{ FRAMES_PER_BUFFER * FRAME_SIZE };	//Size of one buffer, in sample count. For speex compression, must be
 		constexpr static size_t CAPTURE_BUFFER_SIZE{ 4 * BUFFER_SIZE };			//Size of the internal buffer of the capture device
 
 		using sample_t = int16_t;												//Type of an audio sample

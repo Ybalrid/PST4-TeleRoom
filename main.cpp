@@ -18,8 +18,11 @@ AnnMain() //The application entry point is "AnnMain()". return type int.
 	AnnEngine::openConsole();//optional : open console
 	AnnInit("NameOfApp");
 
+	AnnGetResourceManager()->addFileLocation("./media/teleroom/");
+	AnnGetResourceManager()->initResources();
+
 	//Call physics initialization for the player body:
-	AnnGetEngine()->initPlayerRoomscalePhysics();
+	AnnGetEngine()->initPlayerStandingPhysics();
 
 	//Instantiate and register our basic level and "jump" to it:
 	AnnGetLevelManager()->addLevel(std::make_shared<MyLevel>());
