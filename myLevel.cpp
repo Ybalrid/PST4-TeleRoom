@@ -80,6 +80,8 @@ void MyLevel::grabRequested()
 
 		AnnDebug() << "grab object : " << toGrab->getName();
 
+		PST4::NetSubSystem::getNet()->setGrabbedObject(grabbed);
+
 
 	}
 }
@@ -88,7 +90,13 @@ void MyLevel::ungrab()
 {
 	AnnGetPhysicsEngine()->getWorld()->addRigidBody(grabbed->getBody());
 	grabbed->getBody()->activate();
+	PST4::NetSubSystem::getNet()->setGrabbedObject(nullptr);
 	grabbed = nullptr;
+}
+
+std::shared_ptr<Annwvyn::AnnGameObject> MyLevel::getGrabbed()
+{
+	return grabbed;
 }
 
 void MyLevel::runLogic()

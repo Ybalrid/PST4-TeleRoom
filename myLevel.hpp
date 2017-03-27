@@ -37,6 +37,8 @@ public:
 	void grabRequested();
 	void ungrab();
 
+	std::shared_ptr<Annwvyn::AnnGameObject> getGrabbed();
+
 
 private:
 	std::vector<std::shared_ptr<Annwvyn::AnnGameObject>> grabable;

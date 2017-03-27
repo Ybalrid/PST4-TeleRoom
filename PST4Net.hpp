@@ -40,15 +40,20 @@ namespace PST4
 		static NetSubSystem* getNet();
 
 		void addSyncedPhyscisObject(std::shared_ptr<Annwvyn::AnnGameObject> obj);
+		void setGrabbedObject(std::shared_ptr<Annwvyn::AnnGameObject> obj);
 
 	private:
 
 		std::unordered_map <std::string, std::shared_ptr<Annwvyn::AnnGameObject >> syncedPhysicsObject;
 
+		std::shared_ptr<Annwvyn::AnnGameObject> userGrabbedDynamicObject;
+
 		void sendCycle();
 		void handleRecivedHeadPose();
 		void handleReceivedHandPose();
 		void handleReceivedVoiceBuffer();
+		void handleReceivedDynamicObject();
+
 		void waitAndRequestSessionID();
 		void handleEndOfRemoteSession();
 		void receiveCycle();

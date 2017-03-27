@@ -66,6 +66,11 @@ void PST4::NetSubSystem::addSyncedPhyscisObject(std::shared_ptr<Annwvyn::AnnGame
 	syncedPhysicsObject[obj->getName()] = obj;
 }
 
+void PST4::NetSubSystem::setGrabbedObject(std::shared_ptr<Annwvyn::AnnGameObject> obj)
+{
+	userGrabbedDynamicObject = obj;
+}
+
 
 
 void NetSubSystem::sendCycle()
@@ -94,7 +99,17 @@ void NetSubSystem::sendCycle()
 			Annwvyn::AnnDebug() << dynobj->getName();
 			try
 			{
-				dynamicSceneObjectPacket dsoPacket(dynobj->getName(), dynobj->getPosition(), dynobj->getScale(), dynobj->getOrientation());
+				dynamicSceneObjectPacket dsoPacket(dynobj->getName(), 
+					Vect3f(dynobj->getPosition()), 
+					Vect3f(dynobj->getScale()), 
+					Quatf(dynobj->getOrientation()));
+
+				if (dynobj == userGrabbedDynamicObject)
+				{
+					dsoPacket.owner = sessionId;
+				}
+
+				dsoPacket.sender = sessionId;
 				peer->Send(reinterpret_cast<char*>(&dsoPacket), sizeof dsoPacket, LOW_PRIORITY, UNRELIABLE, 0, serverSystemAddress, false);
 			}
 			catch (const std::exception& e)
@@ -212,6 +227,29 @@ void NetSubSystem::handleReceivedVoiceBuffer()
 	}
 }
 
+void PST4::NetSubSystem::handleReceivedDynamicObject()
+{
+	auto dynObj = reinterpret_cast<dynamicSceneObjectPacket*>(packet->data);
+
+	//If it's owned by somebody, strictly follow the position
+	if (dynObj->isOwned() && dynObj->owner != sessionId)
+	{
+		auto obj = AnnGetGameObjectManager()->getObjectFromID(dynObj->idstring);
+
+		//AnnGetPhysicsEngine()->getWorld()->removeRigidBody(obj->getBody());
+
+		obj->setPosition(dynObj->position.getAnnVect3());
+		// obj->setScale(dynObj->scale.getAnnVect3());
+		obj->setOrientation(dynObj->orientation.getAnnQuaternion());
+	}
+
+	//do something... I don't really know, check the distance and maybe correct...
+	else
+	{
+
+	}
+}
+
 void NetSubSystem::waitAndRequestSessionID()
 {
 	if (packet->data[0] == ID_PST4_MESSAGE_SESSION_ID)
@@ -310,6 +348,9 @@ void NetSubSystem::receiveCycle()
 					break;
 				case ID_PST4_MESSAGE_VOICE_BUFFER:
 					handleReceivedVoiceBuffer();
+					break;
+				case ID_PST4_MESSAGE_DYNAMIC_SCENE_OBJECT:
+					handleReceivedDynamicObject();
 					break;
 				default:
 					AnnDebug() << "Session: " << sessionId << " unknown message form server: " << int(packet->data[0]);
