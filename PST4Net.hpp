@@ -39,7 +39,11 @@ namespace PST4
 		///Access to this class singleton instance
 		static NetSubSystem* getNet();
 
+		void addSyncedPhyscisObject(std::shared_ptr<Annwvyn::AnnGameObject> obj);
+
 	private:
+
+		std::unordered_map <std::string, std::shared_ptr<Annwvyn::AnnGameObject >> syncedPhysicsObject;
 
 		void sendCycle();
 		void handleRecivedHeadPose();

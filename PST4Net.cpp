@@ -61,6 +61,13 @@ NetSubSystem* NetSubSystem::getNet()
 	return singleton;
 }
 
+void PST4::NetSubSystem::addSyncedPhyscisObject(std::shared_ptr<Annwvyn::AnnGameObject> obj)
+{
+	syncedPhysicsObject[obj->getName()] = obj;
+}
+
+
+
 void NetSubSystem::sendCycle()
 {
 	if (netState != NetState::CONNECTED) return void();
@@ -79,6 +86,22 @@ void NetSubSystem::sendCycle()
 				handPose = handPosePacket(sessionId, controllers[0]->getWorldPosition(), controllers[0]->getWorldOrientation(), controllers[1]->getWorldPosition(), controllers[1]->getWorldOrientation());
 		}
 		peer->Send(reinterpret_cast<char*>(&handPose), sizeof handPose, LOW_PRIORITY, UNRELIABLE, 0, serverSystemAddress, false);
+
+		for (auto elem : syncedPhysicsObject)
+		{
+			auto dynobj = elem.second;
+
+			Annwvyn::AnnDebug() << dynobj->getName();
+			try
+			{
+				dynamicSceneObjectPacket dsoPacket(dynobj->getName(), dynobj->getPosition(), dynobj->getScale(), dynobj->getOrientation());
+				peer->Send(reinterpret_cast<char*>(&dsoPacket), sizeof dsoPacket, LOW_PRIORITY, UNRELIABLE, 0, serverSystemAddress, false);
+			}
+			catch (const std::exception& e)
+			{
+				Annwvyn::AnnDebug() << e.what();
+			}
+		}
 
 		//If voice available, send voice packet
 		if (voiceSystem)
