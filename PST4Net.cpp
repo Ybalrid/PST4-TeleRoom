@@ -75,6 +75,11 @@ void PST4::NetSubSystem::setGrabbedObject(std::shared_ptr<Annwvyn::AnnGameObject
 	userGrabbedDynamicObject = obj;
 }
 
+bool NetSubSystem::dynamicObjectOwned(const std::string& objName)
+{
+	return lastOwner[objName] != 0;
+}
+
 void NetSubSystem::sendCycle()
 {
 	if (netState != NetState::CONNECTED) return void();

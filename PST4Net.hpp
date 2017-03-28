@@ -42,6 +42,8 @@ namespace PST4
 		void addSyncedPhyscisObject(std::shared_ptr<Annwvyn::AnnGameObject> obj);
 		void setGrabbedObject(std::shared_ptr<Annwvyn::AnnGameObject> obj);
 
+		bool dynamicObjectOwned(const std::string& objName);
+
 	private:
 
 		std::unordered_map <std::string, std::shared_ptr<Annwvyn::AnnGameObject >> syncedPhysicsObject;
