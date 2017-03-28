@@ -249,6 +249,8 @@ void PST4::NetSubSystem::handleReceivedDynamicObject()
 	else if(lastOwner[dynObj->idstring] != 0 && !dynObj->isOwned())
 	{
 		auto physics = AnnGetPhysicsEngine();
+		
+		AnnDebug() << "Removed body";
 		physics->getWorld()->removeRigidBody(rigidBody);
 
 		btTransform worldTransform;
@@ -258,6 +260,8 @@ void PST4::NetSubSystem::handleReceivedDynamicObject()
 		rigidBody->setWorldTransform(worldTransform);
 		rigidBody->setLinearVelocity(btVector3(0, 0, 0));
 		rigidBody->setAngularVelocity(btVector3(0, 0, 0));
+		
+		AnnDebug() << "Added body";
 		physics->getWorld()->addRigidBody(rigidBody);
 		rigidBody->activate(true);
 	}
@@ -275,6 +279,27 @@ void PST4::NetSubSystem::handleReceivedDynamicObject()
 		}
 	}
 
+	if (lastOwner[dynObj->idstring] == 0 && dynObj->isOwned())
+	{
+		AnnDebug() << "Removed body";
+		AnnGetPhysicsEngine()->getWorld()->removeRigidBody(rigidBody);
+	}
+
+	if ((lastOwner[dynObj->idstring] != 0 && lastOwner[dynObj->idstring] != sessionId && !dynObj->isOwned()))
+	{
+		btTransform worldTransform;
+		worldTransform.setOrigin(dynObj->position.getAnnVect3().getBtVector());
+		worldTransform.setRotation(dynObj->orientation.getAnnQuaternion().getBtQuaternion());
+
+		rigidBody->setWorldTransform(worldTransform);
+		rigidBody->setLinearVelocity(btVector3(0, 0, 0));
+		rigidBody->setAngularVelocity(btVector3(0, 0, 0));
+		
+		AnnDebug() << "Added body";
+		AnnGetPhysicsEngine()->getWorld()->addRigidBody(rigidBody);
+	}
+
+	//This sets the current owner of the object for the next simulated frame
 	lastOwner[dynObj->idstring] = dynObj->owner;
 }
 
