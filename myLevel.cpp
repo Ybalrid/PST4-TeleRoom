@@ -35,15 +35,12 @@ void MyLevel::load()
 	PST4::NetSubSystem::getNet()->addSyncedPhyscisObject(sword);
 	grabable.push_back(sword);
 
-
 	auto sword2 = addGameObject("Sword.mesh", "sword2");
 	sword2->setScale(0.1, 0.1, 0.1);
 	sword2->setPosition(-6, 0, 0);
 	sword2->setUpPhysics(1, convexShape);
 	PST4::NetSubSystem::getNet()->addSyncedPhyscisObject(sword2);
 	grabable.push_back(sword2);
-
-
 
 	AnnGetPlayer()->setPosition(Annwvyn::AnnVect3(0, 0, 5));
 	AnnGetPlayer()->setOrientation(Ogre::Euler(AnnAngle::degree(90)));
@@ -74,24 +71,22 @@ void MyLevel::grabRequested()
 
 		//Actually sort the array by player distance
 		std::sort(reachable.begin(), reachable.end(),
-			[&](std::shared_ptr<AnnGameObject> a, std::shared_ptr<AnnGameObject> b) 
-			{
-				auto distA = playerPosition.squaredDistance(a->getPosition());
-				auto distB = playerPosition.squaredDistance(b->getPosition());
+			[&](std::shared_ptr<AnnGameObject> a, std::shared_ptr<AnnGameObject> b)
+		{
+			auto distA = playerPosition.squaredDistance(a->getPosition());
+			auto distB = playerPosition.squaredDistance(b->getPosition());
 
-				return distA > distB;
-			});
+			return distA > distB;
+		});
 
 		auto toGrab = reachable[0];
+
+		if (PST4::NetSubSystem::getNet()->dynamicObjectOwned(toGrab->getName())) return;
 		grabbed = toGrab;
 
 		AnnGetPhysicsEngine()->getWorld()->removeRigidBody(grabbed->getBody());
-
 		AnnDebug() << "grab object : " << toGrab->getName();
-
 		PST4::NetSubSystem::getNet()->setGrabbedObject(grabbed);
-
-
 	}
 }
 
@@ -119,7 +114,6 @@ void MyLevel::runLogic()
 		{
 			reachable.push_back(obj);
 		}
-
 	}
 
 	for (auto controller : AnnGetVRRenderer()->getHandControllerArray()) if (controller)
@@ -140,7 +134,6 @@ void MyLevel::runLogic()
 		grabbed->setPosition(pose.position + pose.orientation*AnnVect3::NEGATIVE_UNIT_Z);
 		grabbed->setOrientation(pose.orientation);
 	}
-
 }
 
 ObjectGrabber::ObjectGrabber(MyLevel* l) : constructListener()
@@ -164,5 +157,3 @@ void ObjectGrabber::MouseEvent(Annwvyn::AnnMouseEvent e)
 	//save last
 	lastState = e.getButtonState(MouseButtonId::Left);
 }
-
-

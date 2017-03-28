@@ -232,6 +232,7 @@ void NetSubSystem::handleReceivedVoiceBuffer()
 
 void PST4::NetSubSystem::handleReceivedDynamicObject()
 {
+	static size_t lastMaster = 0;
 	auto dynObj = reinterpret_cast<dynamicSceneObjectPacket*>(packet->data);
 
 	auto obj = AnnGetGameObjectManager()->getObjectFromID(dynObj->idstring);
@@ -253,6 +254,17 @@ void PST4::NetSubSystem::handleReceivedDynamicObject()
 
 	else if (dynObj->sender == sessionId)
 	{
+		if (lastMaster != sessionId)
+			for (auto syncedObject : syncedPhysicsObject)
+			{
+				if (userGrabbedDynamicObject && syncedObject.second->getName() == userGrabbedDynamicObject->getName()) continue;
+				auto reactivateBody = syncedObject.second->getBody();
+				reactivateBody->setLinearVelocity(btVector3(0, 0, 0));
+				reactivateBody->setAngularVelocity(btVector3(0, 0, 0));
+				world->removeRigidBody(reactivateBody);
+				world->addRigidBody(reactivateBody);
+				reactivateBody->activate();
+			}
 		if (dynObj->isOwned() && dynObj->owner != sessionId)
 		{
 			obj->setPosition(dynObj->position.getAnnVect3());
@@ -266,6 +278,7 @@ void PST4::NetSubSystem::handleReceivedDynamicObject()
 
 	//This sets the current owner of the object for the next simzulated frame
 	lastOwner[dynObj->idstring] = dynObj->owner;
+	lastMaster = dynObj->sender;
 }
 
 void NetSubSystem::waitAndRequestSessionID()
