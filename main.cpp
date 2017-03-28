@@ -12,10 +12,20 @@
 //constexpr const char* const server{ "annwvyn.org" };
 constexpr const char* const server{ "localhost" };
 
+#include <iostream>
+#include <fstream>
 
 using namespace Annwvyn;
 AnnMain() //The application entry point is "AnnMain()". return type int.
 {
+	std::ifstream ipFile;
+	ipFile.open("ip.cfg");
+
+	std::string serverAddress;
+	if (ipFile.is_open())
+		ipFile >> serverAddress;
+	ipFile.close();
+
 	//Initialize the engine
 	AnnEngine::openConsole();//optional : open console
 	AnnInit("NameOfApp");
@@ -33,7 +43,9 @@ AnnMain() //The application entry point is "AnnMain()". return type int.
 	//The game is rendering here now:
 	AnnGetEventManager()->useDefaultEventListener();
 
-	AnnGetEngine()->registerUserSubSystem(std::make_shared<PST4::NetSubSystem>(server));
+	if (serverAddress.empty())
+		serverAddress = server;
+	AnnGetEngine()->registerUserSubSystem(std::make_shared<PST4::NetSubSystem>(serverAddress));
 
 	//The game runs here
 	AnnGetEngine()->startGameplayLoop();

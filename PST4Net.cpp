@@ -75,8 +75,6 @@ void PST4::NetSubSystem::setGrabbedObject(std::shared_ptr<Annwvyn::AnnGameObject
 	userGrabbedDynamicObject = obj;
 }
 
-
-
 void NetSubSystem::sendCycle()
 {
 	if (netState != NetState::CONNECTED) return void();
@@ -101,21 +99,21 @@ void NetSubSystem::sendCycle()
 			auto dynobj = elem.second;
 
 			Annwvyn::AnnDebug() << dynobj->getName();
-				dynamicSceneObjectPacket dsoPacket(dynobj->getName(), 
-					Vect3f(dynobj->getPosition()), 
-					Vect3f(dynobj->getScale()), 
-					Quatf(dynobj->getOrientation()));
+			dynamicSceneObjectPacket dsoPacket(dynobj->getName(),
+				Vect3f(dynobj->getPosition()),
+				Vect3f(dynobj->getScale()),
+				Quatf(dynobj->getOrientation()));
 
-				if (dynobj == userGrabbedDynamicObject)
-				{
-					dsoPacket.owner = sessionId;
-				}
+			if (dynobj == userGrabbedDynamicObject)
+			{
+				dsoPacket.owner = sessionId;
+			}
 
-				AnnDebug() << "sending position : " << dsoPacket.position;
-				AnnDebug() << "Object position is :" << AnnGetGameObjectManager()->getObjectFromID("sword")->getPosition();
+			//AnnDebug() << "sending position : " << dsoPacket.position;
+			//AnnDebug() << "Object position is :" << AnnGetGameObjectManager()->getObjectFromID("sword")->getPosition();
 
-				dsoPacket.sender = sessionId;
-				peer->Send(reinterpret_cast<char*>(&dsoPacket), sizeof dsoPacket, LOW_PRIORITY, UNRELIABLE, 0, serverSystemAddress, false);
+			dsoPacket.sender = sessionId;
+			peer->Send(reinterpret_cast<char*>(&dsoPacket), sizeof dsoPacket, LOW_PRIORITY, UNRELIABLE, 0, serverSystemAddress, false);
 		}
 
 		//If voice available, send voice packet
@@ -132,7 +130,7 @@ void NetSubSystem::sendCycle()
 				for (auto i{ 0 }; i < VoiceSystem::FRAMES_PER_BUFFER; i++)
 				{
 					compressed[i] = voiceSystem->encode(&buffer, i);
-					AnnDebug() << "frame " << i << " compressed datalen : " << compressed[i].size();
+					//AnnDebug() << "frame " << i << " compressed datalen : " << compressed[i].size();
 					voice.frameSizes[i] = unsigned char(compressed[i].size());
 					memcpy(voice.data + voice.dataLen, compressed[i].data(), compressed[i].size());
 					voice.dataLen += unsigned char(compressed[i].size());
@@ -147,7 +145,7 @@ void NetSubSystem::sendCycle()
 
 				//TODO see if we can do fixed lenght packets for that.
 				size_t sizeToSend(6 * sizeof(char) + sizeof(size_t) + voice.dataLen);
-				AnnDebug() << "size sent :" << sizeToSend;
+				//AnnDebug() << "size sent :" << sizeToSend;
 
 				//peer->Send(, sizeof sizeToSend, IMMEDIATE_PRIORITY, RELIABLE_ORDERED, 1, serverSystemAddress, false);
 				peer->Send(&bitstream, IMMEDIATE_PRIORITY, RELIABLE_ORDERED, 1, serverSystemAddress, false);
@@ -227,7 +225,6 @@ void NetSubSystem::handleReceivedVoiceBuffer()
 	}
 }
 
-
 void PST4::NetSubSystem::handleReceivedDynamicObject()
 {
 	auto dynObj = reinterpret_cast<dynamicSceneObjectPacket*>(packet->data);
@@ -255,14 +252,12 @@ void PST4::NetSubSystem::handleReceivedDynamicObject()
 		{
 			obj->setPosition(dynObj->position.getAnnVect3());
 			obj->setOrientation(dynObj->orientation.getAnnQuaternion());
-			
+
 			rigidBody->setLinearVelocity(btVector3(0, 0, 0));
 			rigidBody->setAngularVelocity(btVector3(0, 0, 0));
 			rigidBody->activate();
-
 		}
 	}
-
 
 	//This sets the current owner of the object for the next simzulated frame
 	lastOwner[dynObj->idstring] = dynObj->owner;
@@ -316,7 +311,7 @@ void NetSubSystem::receiveCycle()
 				netState = NetState::CONNECTED;
 				break;
 			default:
-				AnnDebug() << "Got unknown packet message type : " << unsigned int(packet->data[0]);
+				//AnnDebug() << "Got unknown packet message type : " << unsigned int(packet->data[0]);
 				break;
 			}
 		}
