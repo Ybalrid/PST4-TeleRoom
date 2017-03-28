@@ -235,71 +235,36 @@ void PST4::NetSubSystem::handleReceivedDynamicObject()
 	auto obj = AnnGetGameObjectManager()->getObjectFromID(dynObj->idstring);
 	auto rigidBody = obj->getBody();
 
-	//If it's owned by somebody, strictly follow the position
-	if (dynObj->isOwned() && dynObj->owner != sessionId)
+	auto world = AnnGetPhysicsEngine()->getWorld();
+
+	//If I'm not the "sender of this". Sender is master physics on the server
+	if (dynObj->sender != sessionId)
 	{
+		world->removeRigidBody(rigidBody);
 
-		//make sure that body is not "sleeping"
-		rigidBody->activate(true);
-		obj->setPosition(dynObj->position.getAnnVect3());
-		obj->setOrientation(dynObj->orientation.getAnnQuaternion());
-	}
-
-	//do something... I don't really know, check the distance and maybe correct...
-	else if(lastOwner[dynObj->idstring] != 0 && !dynObj->isOwned())
-	{
-		auto physics = AnnGetPhysicsEngine();
-		
-		AnnDebug() << "Removed body";
-		physics->getWorld()->removeRigidBody(rigidBody);
-
-		btTransform worldTransform;
-		worldTransform.setOrigin(dynObj->position.getAnnVect3().getBtVector());
-		worldTransform.setRotation(dynObj->orientation.getAnnQuaternion().getBtQuaternion());
-		
-		rigidBody->setWorldTransform(worldTransform);
-		rigidBody->setLinearVelocity(btVector3(0, 0, 0));
-		rigidBody->setAngularVelocity(btVector3(0, 0, 0));
-		
-		AnnDebug() << "Added body";
-		physics->getWorld()->addRigidBody(rigidBody);
-		rigidBody->activate(true);
-	}
-
-	else if (lastOwner[dynObj->idstring] == 0 && !dynObj->isOwned())
-	{
-		auto distance = dynObj->position.getAnnVect3().squaredDistance(obj->getPosition());
-		if (distance > dynObjectDeviationThreshold)
+		if (dynObj->owner != sessionId)
 		{
-			AnnDebug() << "object is not synced...";
-			AnnDebug() << distance;
-			AnnDebug() << dynObj->position;
-			AnnDebug() << obj->getPosition();
+			obj->setPosition(dynObj->position.getAnnVect3());
+			obj->setOrientation(dynObj->orientation.getAnnQuaternion());
+		}
+	}
+
+	else if (dynObj->sender == sessionId)
+	{
+		if (dynObj->isOwned() && dynObj->owner != sessionId)
+		{
+			obj->setPosition(dynObj->position.getAnnVect3());
+			obj->setOrientation(dynObj->orientation.getAnnQuaternion());
+			
+			rigidBody->setLinearVelocity(btVector3(0, 0, 0));
+			rigidBody->setAngularVelocity(btVector3(0, 0, 0));
+			rigidBody->activate();
 
 		}
 	}
 
-	if (lastOwner[dynObj->idstring] == 0 && dynObj->isOwned())
-	{
-		AnnDebug() << "Removed body";
-		AnnGetPhysicsEngine()->getWorld()->removeRigidBody(rigidBody);
-	}
 
-	if ((lastOwner[dynObj->idstring] != 0 && lastOwner[dynObj->idstring] != sessionId && !dynObj->isOwned()))
-	{
-		btTransform worldTransform;
-		worldTransform.setOrigin(dynObj->position.getAnnVect3().getBtVector());
-		worldTransform.setRotation(dynObj->orientation.getAnnQuaternion().getBtQuaternion());
-
-		rigidBody->setWorldTransform(worldTransform);
-		rigidBody->setLinearVelocity(btVector3(0, 0, 0));
-		rigidBody->setAngularVelocity(btVector3(0, 0, 0));
-		
-		AnnDebug() << "Added body";
-		AnnGetPhysicsEngine()->getWorld()->addRigidBody(rigidBody);
-	}
-
-	//This sets the current owner of the object for the next simulated frame
+	//This sets the current owner of the object for the next simzulated frame
 	lastOwner[dynObj->idstring] = dynObj->owner;
 }
 

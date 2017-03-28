@@ -28,12 +28,21 @@ void MyLevel::load()
 	Sun->setType(AnnLightObject::ANN_LIGHT_DIRECTIONAL);
 	Sun->setDirection(AnnVect3::NEGATIVE_UNIT_Y + 1.5f* AnnVect3::NEGATIVE_UNIT_Z);
 
-	auto obj = addGameObject("Sword.mesh", "sword");
-	obj->setScale(0.1, 0.1, 0.1);
-	obj->setPosition(-5, 0, 0);
-	obj->setUpPhysics(1, convexShape);
-	PST4::NetSubSystem::getNet()->addSyncedPhyscisObject(obj);
-	grabable.push_back(obj);
+	auto sword = addGameObject("Sword.mesh", "sword");
+	sword->setScale(0.1, 0.1, 0.1);
+	sword->setPosition(-5, 0, 0);
+	sword->setUpPhysics(1, convexShape);
+	PST4::NetSubSystem::getNet()->addSyncedPhyscisObject(sword);
+	grabable.push_back(sword);
+
+
+	auto sword2 = addGameObject("Sword.mesh", "sword2");
+	sword2->setScale(0.1, 0.1, 0.1);
+	sword2->setPosition(-6, 0, 0);
+	sword2->setUpPhysics(1, convexShape);
+	PST4::NetSubSystem::getNet()->addSyncedPhyscisObject(sword2);
+	grabable.push_back(sword2);
+
 
 
 	AnnGetPlayer()->setPosition(Annwvyn::AnnVect3(0, 0, 5));
