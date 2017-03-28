@@ -45,6 +45,8 @@ namespace PST4
 	private:
 
 		std::unordered_map <std::string, std::shared_ptr<Annwvyn::AnnGameObject >> syncedPhysicsObject;
+		std::unordered_map <std::string, size_t> lastOwner;
+		float dynObjectDeviationThreshold;
 
 		std::shared_ptr<Annwvyn::AnnGameObject> userGrabbedDynamicObject;
 

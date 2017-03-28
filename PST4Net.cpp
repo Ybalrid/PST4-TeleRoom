@@ -13,6 +13,9 @@ p{ "Hello from Annwvyn!" },
 lastHeartbeatTime{ 0 },
 sessionId{ 0 }
 {
+	dynObjectDeviationThreshold = 0.15f;
+	dynObjectDeviationThreshold *= dynObjectDeviationThreshold;
+
 	if (singleton) throw std::runtime_error("Tried to instantiate PST4::NetSubsystem more than once!");
 	singleton = this;
 
@@ -64,6 +67,7 @@ NetSubSystem* NetSubSystem::getNet()
 void PST4::NetSubSystem::addSyncedPhyscisObject(std::shared_ptr<Annwvyn::AnnGameObject> obj)
 {
 	syncedPhysicsObject[obj->getName()] = obj;
+	lastOwner[obj->getName()] = 0;
 }
 
 void PST4::NetSubSystem::setGrabbedObject(std::shared_ptr<Annwvyn::AnnGameObject> obj)
@@ -97,8 +101,6 @@ void NetSubSystem::sendCycle()
 			auto dynobj = elem.second;
 
 			Annwvyn::AnnDebug() << dynobj->getName();
-			try
-			{
 				dynamicSceneObjectPacket dsoPacket(dynobj->getName(), 
 					Vect3f(dynobj->getPosition()), 
 					Vect3f(dynobj->getScale()), 
@@ -109,13 +111,11 @@ void NetSubSystem::sendCycle()
 					dsoPacket.owner = sessionId;
 				}
 
+				AnnDebug() << "sending position : " << dsoPacket.position;
+				AnnDebug() << "Object position is :" << AnnGetGameObjectManager()->getObjectFromID("sword")->getPosition();
+
 				dsoPacket.sender = sessionId;
 				peer->Send(reinterpret_cast<char*>(&dsoPacket), sizeof dsoPacket, LOW_PRIORITY, UNRELIABLE, 0, serverSystemAddress, false);
-			}
-			catch (const std::exception& e)
-			{
-				Annwvyn::AnnDebug() << e.what();
-			}
 		}
 
 		//If voice available, send voice packet
@@ -227,27 +227,55 @@ void NetSubSystem::handleReceivedVoiceBuffer()
 	}
 }
 
+
 void PST4::NetSubSystem::handleReceivedDynamicObject()
 {
 	auto dynObj = reinterpret_cast<dynamicSceneObjectPacket*>(packet->data);
 
+	auto obj = AnnGetGameObjectManager()->getObjectFromID(dynObj->idstring);
+	auto rigidBody = obj->getBody();
+
 	//If it's owned by somebody, strictly follow the position
 	if (dynObj->isOwned() && dynObj->owner != sessionId)
 	{
-		auto obj = AnnGetGameObjectManager()->getObjectFromID(dynObj->idstring);
 
-		//AnnGetPhysicsEngine()->getWorld()->removeRigidBody(obj->getBody());
-
+		//make sure that body is not "sleeping"
+		rigidBody->activate(true);
 		obj->setPosition(dynObj->position.getAnnVect3());
-		// obj->setScale(dynObj->scale.getAnnVect3());
 		obj->setOrientation(dynObj->orientation.getAnnQuaternion());
 	}
 
 	//do something... I don't really know, check the distance and maybe correct...
-	else
+	else if(lastOwner[dynObj->idstring] != 0 && !dynObj->isOwned())
 	{
+		auto physics = AnnGetPhysicsEngine();
+		physics->getWorld()->removeRigidBody(rigidBody);
 
+		btTransform worldTransform;
+		worldTransform.setOrigin(dynObj->position.getAnnVect3().getBtVector());
+		worldTransform.setRotation(dynObj->orientation.getAnnQuaternion().getBtQuaternion());
+		
+		rigidBody->setWorldTransform(worldTransform);
+		rigidBody->setLinearVelocity(btVector3(0, 0, 0));
+		rigidBody->setAngularVelocity(btVector3(0, 0, 0));
+		physics->getWorld()->addRigidBody(rigidBody);
+		rigidBody->activate(true);
 	}
+
+	else if (lastOwner[dynObj->idstring] == 0 && !dynObj->isOwned())
+	{
+		auto distance = dynObj->position.getAnnVect3().squaredDistance(obj->getPosition());
+		if (distance > dynObjectDeviationThreshold)
+		{
+			AnnDebug() << "object is not synced...";
+			AnnDebug() << distance;
+			AnnDebug() << dynObj->position;
+			AnnDebug() << obj->getPosition();
+
+		}
+	}
+
+	lastOwner[dynObj->idstring] = dynObj->owner;
 }
 
 void NetSubSystem::waitAndRequestSessionID()
