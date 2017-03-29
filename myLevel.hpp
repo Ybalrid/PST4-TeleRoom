@@ -38,17 +38,18 @@ public:
 	void ungrab();
 
 	std::shared_ptr<Annwvyn::AnnGameObject> getGrabbed();
-
-
+	enum class grabbedBy { mouse, leftHand, rightHand };
+	void setHolder(grabbedBy gb);
 private:
 	std::vector<std::shared_ptr<Annwvyn::AnnGameObject>> grabable;
 	std::vector<std::shared_ptr<Annwvyn::AnnGameObject>> reachable;
-	Annwvyn:: AnnVect3 squaredThreshold;
+	Annwvyn::AnnVect3 squaredThreshold;
 
 	std::shared_ptr<ObjectGrabber> grabber;
 
 	std::shared_ptr<Annwvyn::AnnGameObject> grabbed;
 
+	grabbedBy holder;
 };
 
 #endif //MY_LEVEL

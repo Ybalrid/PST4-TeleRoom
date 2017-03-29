@@ -9,6 +9,8 @@ MyLevel::MyLevel() : constructLevel()
 	squaredThreshold = AnnVect3{ 1,1,1 };
 
 	grabber = std::make_shared<ObjectGrabber>(this);
+
+	holder = grabbedBy::mouse;
 }
 
 void MyLevel::load()
@@ -67,7 +69,18 @@ void MyLevel::grabRequested()
 	AnnDebug() << "should grab an object";
 	if (!reachable.empty())
 	{
-		auto playerPosition = AnnGetVRRenderer()->trackedHeadPose.position;
+		AnnVect3 playerPosition = AnnGetVRRenderer()->trackedHeadPose.position;
+
+		switch (holder)
+		{
+		case grabbedBy::leftHand:
+			playerPosition = AnnGetVRRenderer()->getHandControllerArray()[0]->getWorldPosition();
+			break;
+		case grabbedBy::rightHand:
+			playerPosition = AnnGetVRRenderer()->getHandControllerArray()[1]->getWorldPosition();
+			break;
+		default:break;
+		}
 
 		//Actually sort the array by player distance
 		std::sort(reachable.begin(), reachable.end(),
@@ -103,6 +116,11 @@ std::shared_ptr<Annwvyn::AnnGameObject> MyLevel::getGrabbed()
 	return grabbed;
 }
 
+void MyLevel::setHolder(grabbedBy gb)
+{
+	holder = gb;
+}
+
 void MyLevel::runLogic()
 {
 	reachable.clear();
@@ -129,10 +147,27 @@ void MyLevel::runLogic()
 
 	if (grabbed)
 	{
-		auto pose = AnnGetVRRenderer()->trackedHeadPose;
+		AnnVect3 position = AnnGetVRRenderer()->trackedHeadPose.position;
+		AnnQuaternion orientation = AnnGetVRRenderer()->trackedHeadPose.orientation;
+		AnnVect3 offset = AnnVect3::ZERO;
 
-		grabbed->setPosition(pose.position + pose.orientation*AnnVect3::NEGATIVE_UNIT_Z);
-		grabbed->setOrientation(pose.orientation);
+		switch (holder)
+		{
+		case grabbedBy::leftHand:
+			position = AnnGetVRRenderer()->getHandControllerArray()[0]->getWorldPosition();
+			orientation = AnnGetVRRenderer()->getHandControllerArray()[0]->getWorldOrientation();
+			break;
+		case grabbedBy::rightHand:
+			position = AnnGetVRRenderer()->getHandControllerArray()[1]->getWorldPosition();
+			orientation = AnnGetVRRenderer()->getHandControllerArray()[1]->getWorldOrientation();
+			break;
+		case grabbedBy::mouse:
+			offset = AnnVect3::NEGATIVE_UNIT_Z;
+			break;
+		}
+
+		grabbed->setPosition(position + orientation*offset);
+		grabbed->setOrientation(orientation * AnnQuaternion(AnnDegree(180), AnnVect3::UNIT_Y));
 	}
 }
 
@@ -144,16 +179,55 @@ ObjectGrabber::ObjectGrabber(MyLevel* l) : constructListener()
 
 void ObjectGrabber::HandControllerEvent(Annwvyn::AnnHandControllerEvent e)
 {
+	static float leftValue = 0, rightValue = 0;
+
+	auto controller = e.getController();
+
+	bool triggered = false;
+
+	switch (controller->getSide())
+	{
+	case AnnHandController::leftHandController:
+		if (controller->getAxis(2).getValue() > 0.5f && leftValue <= 0.5f)
+		{
+			triggered = true;
+			level->setHolder(MyLevel::grabbedBy::leftHand);
+		}
+		if (controller->getAxis(2).getValue() < 0.5f && leftValue >= 0.5f)
+		{
+			triggered = true;
+			level->setHolder(MyLevel::grabbedBy::leftHand);
+		}
+
+		leftValue = controller->getAxis(2).getValue();
+		break;
+	case AnnHandController::rightHandController:
+		if (controller->getAxis(2).getValue() > 0.5f && rightValue <= 0.5f)
+		{
+			triggered = true;
+			level->setHolder(MyLevel::grabbedBy::rightHand);
+		}
+		if (controller->getAxis(2).getValue() < 0.5f && rightValue >= 0.5f)
+		{
+			triggered = true;
+			level->setHolder(MyLevel::grabbedBy::rightHand);
+		}
+
+		rightValue = controller->getAxis(2).getValue();
+		break;
+	}
+
+	if (triggered) level->grabRequested();
 }
 
 void ObjectGrabber::MouseEvent(Annwvyn::AnnMouseEvent e)
 {
 	//If clicked
-	if (!lastState && e.getButtonState(MouseButtonId::Left))
+	if (!lastState && e.getButtonState(Left))
 	{
 		level->grabRequested();
 	}
 
 	//save last
-	lastState = e.getButtonState(MouseButtonId::Left);
+	lastState = e.getButtonState(Left);
 }
